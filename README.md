@@ -8,4 +8,4 @@ load_image: loads hdf5 file and returns image(np.array) and ground truth(dict)
 from lib.load_image import load_image
 image, ground_truth = load_image(path)
 ```
-test
+
