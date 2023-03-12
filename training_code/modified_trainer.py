@@ -207,8 +207,8 @@ class training_temp:
                     logging.info(logline)
                     logging.info('Started visualize_so3.')
                     distribution_images = evaluation.visualize_model_output(
-                        self.vision_model, self.model_head, self.visualization_images,
-                        self.visualization_rotations_gt)
+                        self.vision_model, self.model_head, visualization_images,
+                        visualization_rotations_gt)
                     tf.summary.image('output_distribution', distribution_images,
                                      step=step_num)
   
@@ -219,14 +219,14 @@ class training_temp:
             saveable_head_model = tf.keras.Model(inp, self.model_head(inp))
             self.save_model = False
         if not self.save_model:
-            self.vision_model.save(os.path.join(self.outdir, 'base_vision_model'))
-            saveable_head_model.save(os.path.join(self.outdir, 'ipdf_head_model'))
+            self.vision_model.save(os.path.join(self.output_dir, 'base_vision_model'))
+            saveable_head_model.save(os.path.join(self.output_dir, 'ipdf_head_model'))
 
             logging.info('Saved models.')
             
             
         
-        print("So far so good")
-tesss= training_temp()
 
-tesss.start_stuff()
+test_if_works= training_temp()
+
+test_if_works.start_stuff()
