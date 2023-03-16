@@ -1,6 +1,6 @@
 #define class IPDF
 
-class MPL:
+class MLP:
     def __init__(self):
         pass
 
