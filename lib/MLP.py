@@ -44,7 +44,6 @@ class MLP:
         loss_value = self.train_step(x, y)
         return loss_value
 
-
     @tf.function
     def train_step(self, x, y):
         with tf.GradientTape() as tape:
