@@ -119,7 +119,27 @@ class ImplicitSO3(tfkl.Layer):
     input_visual = tfkl.Input(shape=(len_visual_description,))
     visual_embedding = tfkl.Dense(mlp_layer_sizes[0])(input_visual)
     input_query = tfkl.Input(shape=(None, self.len_query,))
+    query_embed    if self.so3_sampling_mode == 'grid':
+      self.get_closest_available_grid(self.number_train_queries)
+    self.get_closest_available_grid(self.number_eval_queries)
+
+    input_visual = tfkl.Input(shape=(len_visual_description,))
+    visual_embedding = tfkl.Dense(mlp_layer_sizes[0])(input_visual)
+    input_query = tfkl.Input(shape=(None, self.len_query,))
     query_embedding = tfkl.Dense(mlp_layer_sizes[0])(input_query)
+
+    # Broadcast sum to combine inputs.
+    output = visual_embedding[:, tf.newaxis] + query_embedding
+
+    output = tfkl.ReLU()(output)
+
+    for num_units in mlp_layer_sizes[1:]:
+      output = tfkl.Dense(num_units, 'relu')(output)
+    output = tfkl.Dense(1)(output)
+    self.implicit_model = tf.keras.models.Model(
+        inputs=[input_visual, input_query],
+        outputs=output)
+    self.mlp_layer_sizes = mlp_layer_sizesding = tfkl.Dense(mlp_layer_sizes[0])(input_query)
 
     # Broadcast sum to combine inputs.
     output = visual_embedding[:, tf.newaxis] + query_embedding
