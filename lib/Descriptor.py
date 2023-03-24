@@ -1,21 +1,33 @@
 #define class IPDF
-
 import numpy as np
+from PIL import Image
 import tensorflow as tf
-from keras import applications
 
 tf.keras.utils.load_img
 
 tf_keras_layers = tf.keras.layers
 
 class Descriptor:
-    def get_image_descriptor(self, image_path):
+    def get_image_descriptor_path(self, image_path):
         "This function will return a descriptor for the vision model. It takes a image path"
         _image = tf.keras.utils.load_img(image_path)
         _image = tf.keras.utils.img_to_array(_image)[:,:,:3]
         _image = np.expand_dims(_image , axis=0)
         return self.vision_model.predict(_image)
     
+    def get_image_descriptor_array(self, image_data, image_depth = "RGB"):
+        "This function will return a descriptor for the vision model. It takes a hdf5"
+        _image = Image.fromarray(image_data,image_depth)
+        _image = tf.keras.utils.img_to_array(_image)[:,:,:3]
+        _image = np.expand_dims(_image , axis=0)
+        return self.vision_model.predict(_image)
+    
+    def get_image_descriptor_PIL(self, image_data):
+        "This function will return a descriptor for the vision model. It takes a PIL image"
+        _image = tf.keras.utils.img_to_array(image_data)[:,:,:3]
+        _image = np.expand_dims(image_data , axis=0)
+        return self.vision_model.predict(_image)
+        
     def show_base_model(self):
         "Shows the base model"
         self.base_descriptor_model.summary()
