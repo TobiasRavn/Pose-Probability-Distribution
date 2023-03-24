@@ -2,6 +2,9 @@
 from MLP import *
 from Descriptor import *
 from Pose_Accumulator import *
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 class Model:
     def __init__(self):
@@ -36,6 +39,50 @@ class Model:
         #sample space
 
 
-
     def plotHeatmap(self, pdf_matrix):
         #plot heatmap
+        # Generate random data for position and orientation
+        x = np.random.normal(size=100)
+        y = np.random.normal(size=100)
+        theta = np.random.uniform(low=0, high=360, size=1000)
+
+        # Construct covariance matrix
+        var_x = 0.1
+        var_y = 0.1
+        var_theta = 0.1
+        corr_xy = 0.5
+        cov_matrix = np.array([[var_x, corr_xy*np.sqrt(var_x*var_y), 0],
+                            [corr_xy*np.sqrt(var_x*var_y), var_y, 0],
+                            [0, 0, var_theta]])
+
+        # Calculate probabilities using multivariate Gaussian distribution
+        # Here, we assume that the mean is zero for simplicity
+        xyz = np.vstack((x,y,theta)).T
+        prob = np.exp(-0.5 * np.sum(xyz.dot(np.linalg.inv(cov_matrix)) * xyz, axis=1))
+
+        # Map the rotation values to a color scale
+        cmap = plt.get_cmap("hsv")
+        norm = plt.Normalize(vmin=0, vmax=360)
+        colors = cmap(norm(theta))
+
+        # Create a scatter plot with a colorbar
+        fig, ax = plt.subplots(figsize=(8, 6))
+        sc = ax.scatter(x, y, c=colors, cmap=cmap, s=20, edgecolors="black")
+        sc.set_clim(0, 360)
+
+        # Move colorbar to the right side
+        cbar = plt.colorbar(sc, ax=ax, ticks=np.linspace(0, 360, num=9), 
+                            orientation='vertical', pad=0.05, shrink=0.7, aspect=10, 
+                            fraction=0.15, label='Rotation (degrees)')
+        cbar.ax.tick_params(labelsize=10)
+        cax = cbar.ax
+        cax.yaxis.set_label_position('right')
+        cax.yaxis.set_ticks_position('right')
+        cax.set_ylabel('Rotation (degrees)', rotation=-90, va='bottom', fontsize=14, labelpad=10)
+
+        # Set axis labels and titles
+        ax.set_xlabel("X-coor")
+        ax.set_ylabel("Y-coor")
+        ax.set_title("Probability of Pose Estimation of Cup in One Plane", fontsize=20)
+
+        plt.show()
