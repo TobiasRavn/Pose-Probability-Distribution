@@ -36,6 +36,7 @@ class MLP:
         return x
 
     def train(self, features, position, output):
+        pass
         #train MLP
         #concatenate features and position
         x = self.convert_to_tensor(self, features, position)
@@ -55,8 +56,10 @@ class MLP:
         return loss_value
 
     def save_MLP(self, path):
+        pass
         #save MLP
         pass
     def load_MLP(self, path):
+        pass
         #load MLP
         pass
