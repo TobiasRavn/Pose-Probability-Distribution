@@ -245,7 +245,7 @@ def main(_):
     visual_input = tfkl.Input(shape=(len_visual_description,))
     query_input = tfkl.Input(shape=(None, model_head.len_query,))
     inp = [visual_input, query_input]
-    saveable_head_model = tf.keras.Model(inp, model_head(inp))
+    saveable_head_model = tf.keras.Controller(inp, model_head(inp))
     models_saved = False
     if not models_saved:
       vision_model.save(os.path.join(outdir, 'base_vision_model'))

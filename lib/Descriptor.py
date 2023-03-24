@@ -49,4 +49,4 @@ class Descriptor:
         layers_added = tf_keras_layers.GlobalAveragePooling2D()(layers_added)
         
         self.length_of_visual_description = layers_added.shape[-1]
-        self.vision_model = tf.keras.Model(self.input_image_size, layers_added)
+        self.vision_model = tf.keras.Controller(self.input_image_size, layers_added)

@@ -54,7 +54,7 @@ def create_vision_model(image_dims=(224, 224, 3), weights='imagenet'):
   x = base_model(inp)
   x = tfkl.GlobalAveragePooling2D()(x)
   len_visual_description = x.shape[-1]
-  vision_model = tf.keras.Model(inp, x)
+  vision_model = tf.keras.Controller(inp, x)
   return vision_model, len_visual_description
 
 
@@ -136,7 +136,7 @@ class ImplicitSO3(tfkl.Layer):
     for num_units in mlp_layer_sizes[1:]:
       output = tfkl.Dense(num_units, 'relu')(output)
     output = tfkl.Dense(1)(output)
-    self.implicit_model = tf.keras.models.Model(
+    self.implicit_model = tf.keras.models.Controller(
         inputs=[input_visual, input_query],
         outputs=output)
     self.mlp_layer_sizes = mlp_layer_sizesding = tfkl.Dense(mlp_layer_sizes[0])(input_query)
@@ -149,7 +149,7 @@ class ImplicitSO3(tfkl.Layer):
     for num_units in mlp_layer_sizes[1:]:
       output = tfkl.Dense(num_units, 'relu')(output)
     output = tfkl.Dense(1)(output)
-    self.implicit_model = tf.keras.models.Model(
+    self.implicit_model = tf.keras.models.Controller(
         inputs=[input_visual, input_query],
         outputs=output)
     self.mlp_layer_sizes = mlp_layer_sizes
