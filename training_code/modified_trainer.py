@@ -216,7 +216,7 @@ class training_temp:
             visual_input = tfkl.Input(shape=(self.len_visual_description,))
             query_input = tfkl.Input(shape=(None, self.model_head.len_query,))
             inp = [visual_input, query_input]
-            saveable_head_model = tf.keras.Model(inp, self.model_head(inp))
+            saveable_head_model = tf.keras.Controller(inp, self.model_head(inp))
             self.save_model = False
         if not self.save_model:
             self.vision_model.save(os.path.join(self.output_dir, 'base_vision_model'))
