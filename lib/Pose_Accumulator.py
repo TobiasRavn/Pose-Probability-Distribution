@@ -7,7 +7,7 @@ import random
 class Pose_Accumulator:
 
     def __init__(self, step_x, x_min, x_max, step_y, y_min, y_max, step_r,training=False, mode = 'all', num = 100, truth=0):
-        self._index=-1
+        self._index=0
 
 
 
@@ -30,7 +30,6 @@ class Pose_Accumulator:
             self.size=x_num*y_num*r_num
             self.allPoses=np.zeros([self.size,4])
 
-            print(r_range)
             for x in x_range:
                 for y in y_range:
                     for r in r_range:

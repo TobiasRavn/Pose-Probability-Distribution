@@ -1,7 +1,7 @@
 #define class IPDF
-from MLP import *
-from Descriptor import *
-from Pose_Accumulator import *
+from lib.MLP import *
+from lib.Descriptor import *
+from lib.Pose_Accumulator import *
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ class Controller:
         #init MLP
 
     def sample_space(self, image, x_step, y_step, r_step, truth=0,training=False):
-        descriptor = np.zeros(50);#self.descriptor.get_image_descriptor(image)
+        descriptor = self.descriptor.get_image_descriptor_array(image)
         poses=0
         if(training==True):
             poses = Pose_Accumulator(x_step, self.x_min, self.x_max, y_step, self.y_min, self.y_max, r_step,training=training, truth=truth);

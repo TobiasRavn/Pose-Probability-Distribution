@@ -6,8 +6,8 @@ import glob
 import numpy as np
 
 
-from Controller import *
-from load_image import *
+from lib.Controller import *
+from lib.load_image import *
 
 
 
@@ -15,16 +15,16 @@ from load_image import *
 def main() -> int:
     """Echo the input arguments to standard output"""
 
-    dir = "../blenderproc/data"
+    dir = "blenderproc/data"
     training = True
 
 
     files=glob.glob(dir+"/*.hdf5")
-
+    print(files)
     image, ground_truth = load_image(files[0])
 
     img=np.array(image)
-    size=(np.prod(img.shape))
+    size=img.shape
     controller = Controller(size)
     x_step=0.1
     y_step=0.1

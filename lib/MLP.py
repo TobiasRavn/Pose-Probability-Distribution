@@ -13,7 +13,7 @@ class MLP:
         x = layers.Dense(256, activation="relu", name="dense_1")(inputs)
         x = layers.Dense(256, activation="relu", name="dense_2")(x)
         outputs = layers.Dense(1, name="predictions")(x)
-        self.model = keras.Controller(inputs=inputs, outputs=outputs)
+        self.model = keras.Model(inputs=inputs, outputs=outputs)
 
         #define optimizer and loss function
         self.optimizer = keras.optimizers.SGD(learning_rate=self.learning_rate)
