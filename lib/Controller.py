@@ -18,13 +18,12 @@ class Controller:
         #init MLP
 
     def sample_space(self, image, x_step, y_step, r_step, truth=0,training=False):
-        descriptor = np.zeros(50);#self.descriptor.get_image_descriptor(image)
+        descriptor = self.descriptor.get_image_descriptor(image)
         poses=0
         if(training==True):
             poses = Pose_Accumulator(x_step, self.x_min, self.x_max, y_step, self.y_min, self.y_max, r_step,training=training, truth=truth);
         else:
-            poses = Pose_Accumulator(x_step, self.x_min, self.x_max, y_step, self.y_min, self.y_max, r_step,
-                                     training=training, truth=truth);
+            poses = Pose_Accumulator(x_step, self.x_min, self.x_max, y_step, self.y_min, self.y_max, r_step);
 
         for pose in poses:
             if(training):
