@@ -1,7 +1,7 @@
 #define class IPDF
-from MLP import *
-from Descriptor import *
-from Pose_Accumulator import *
+from lib.MLP import *
+from lib.Descriptor import *
+from lib.Pose_Accumulator import *
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -13,24 +13,36 @@ class Controller:
         self.r_min, self.r_max = 0, 360
         #init resnet
 
-        self.mlp=MLP(50,4)
+        self.mlp=MLP(2048,4)
         self.descriptor=Descriptor(imgSize)
         #init MLP
 
     def sample_space(self, image, x_step, y_step, r_step, truth=0,training=False):
-        descriptor = self.descriptor.get_image_descriptor(image)
+        descriptor = self.descriptor.get_image_descriptor_array(image)
+        #convert image to descriptor from 1x2048 to 2048
+        descriptor = descriptor.flatten()
+
         poses=0
         if(training==True):
-            poses = Pose_Accumulator(x_step, self.x_min, self.x_max, y_step, self.y_min, self.y_max, r_step,training=training, truth=truth);
+            poses = Pose_Accumulator(x_step, self.x_min, self.x_max, 
+                                     y_step, self.y_min, self.y_max, 
+                                     r_step,
+                                     training=training, truth=truth, mode='random')
         else:
-            poses = Pose_Accumulator(x_step, self.x_min, self.x_max, y_step, self.y_min, self.y_max, r_step,
-                                     training=training, truth=truth);
+            poses = Pose_Accumulator(x_step, self.x_min, self.x_max,
+                                     y_step, self.y_min, self.y_max,
+                                     r_step,
+                                     training=training, truth=truth)
 
         for pose in poses:
+
             if(training):
                 poses.result(self.mlp.train(descriptor, pose.pose(),pose.output()))
             else:
                 poses.result(self.mlp.get(descriptor, pose.pose()))
+        #print mean of all results
+        print("mean of wrong pose lose: ",np.mean(poses.allResults[0:99]) , " correct pose lose: ",np.mean(poses.allResults[100]))
+        
         # sample space
         # return matrix of size [(x_max-x_min)/x_step), (y_max-y_min)/y_step),(r_max-r_min)/r_step)]
 
