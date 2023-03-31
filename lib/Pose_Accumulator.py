@@ -71,7 +71,7 @@ class Pose_Accumulator:
     def pose(self):
         return self.allPoses[self._index]
 
-    def truth(self):
+    def output(self): #True Output
         return self.outputs[self._index]
 
     def __next__(self):

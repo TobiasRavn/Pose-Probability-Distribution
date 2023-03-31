@@ -28,7 +28,7 @@ class Controller:
 
         for pose in poses:
             if(training):
-                poses.result(self.mlp.train(descriptor, pose.pose(),pose.truth()))
+                poses.result(self.mlp.train(descriptor, pose.pose(),pose.output()))
             else:
                 poses.result(self.mlp.get(descriptor, pose.pose()))
         # sample space
