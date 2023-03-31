@@ -3,11 +3,12 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
 
+#https://keras.io/guides/writing_a_training_loop_from_scratch/
 class MLP:
     def __init__(self, lenDiscriptors, lenPose):
         self.lenDiscriptors = lenDiscriptors
         self.lenPose = lenPose
-        self.learning_rate = 0.001
+        self.learning_rate = 0.0000000001
         #define MLP
         inputs = keras.Input(shape=(self.lenDiscriptors+self.lenPose,), name="Descrip_and_pose")
         x = layers.Dense(256, activation="relu", name="dense_1")(inputs)
@@ -30,7 +31,10 @@ class MLP:
         return logits.numpy().transpose()[0]
 
     def convert_to_tensor(self, features, position):
-        #convert features and position to tensor
+        # convert shape from (n,) to (None, n)
+        position = np.expand_dims(position, axis=0)
+        features = np.expand_dims(features, axis=0)
+
         x = np.concatenate((features, position), axis=1)
         x = tf.convert_to_tensor(x)
         return x
@@ -39,17 +43,22 @@ class MLP:
         pass
         #train MLP
         #concatenate features and position
-        x = self.convert_to_tensor(self, features, position)
-        y = tf.convert_to_tensor(output)
+        x = self.convert_to_tensor(features, position)
+        #y = tf.convert_to_tensor(output)
+        #convert output to float32 tensor and reshape
+        y = tf.convert_to_tensor(output, dtype=tf.float32)
+        y = tf.reshape(y, (1,1))
         # train step
         loss_value = self.train_step(x, y)
-        return loss_value
+        #print("Training loss: ", loss_value.numpy())
+        return loss_value.numpy()
 
     @tf.function
     def train_step(self, x, y):
         with tf.GradientTape() as tape:
             logits = self.model(x, training=True)
             loss_value = self.loss_fn(y, logits)
+            #loss_value = abs(tf.reduce_mean(logits))
         grads = tape.gradient(loss_value, self.model.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
         self.train_acc_metric.update_state(y, logits)
