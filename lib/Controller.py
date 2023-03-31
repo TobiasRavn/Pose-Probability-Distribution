@@ -19,14 +19,18 @@ class Controller:
 
     def sample_space(self, image, x_step, y_step, r_step, truth=0,training=False):
         descriptor = np.zeros(50);#self.descriptor.get_image_descriptor(image)
-
-        poses = Pose_Accumulator(x_step, self.x_min, self.x_max, y_step, self.y_min, self.y_max, r_step,training=training);
+        poses=0
+        if(training==True):
+            poses = Pose_Accumulator(x_step, self.x_min, self.x_max, y_step, self.y_min, self.y_max, r_step,training=training, truth=truth);
+        else:
+            poses = Pose_Accumulator(x_step, self.x_min, self.x_max, y_step, self.y_min, self.y_max, r_step,
+                                     training=training, truth=truth);
 
         for pose in poses:
             if(training):
-                poses.result(self.mlp.train(descriptor, pose,truth))
+                poses.result(self.mlp.train(descriptor, pose.pose(),pose.truth()))
             else:
-                poses.result(self.mlp.get(descriptor, pose))
+                poses.result(self.mlp.get(descriptor, pose.pose()))
         # sample space
         # return matrix of size [(x_max-x_min)/x_step), (y_max-y_min)/y_step),(r_max-r_min)/r_step)]
 

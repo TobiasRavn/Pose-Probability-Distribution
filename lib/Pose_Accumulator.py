@@ -6,7 +6,7 @@ import random
 
 class Pose_Accumulator:
 
-    def __init__(self, step_x, x_min, x_max, step_y, y_min, y_max, step_r,training=False, mode = 'all', num = 100):
+    def __init__(self, step_x, x_min, x_max, step_y, y_min, y_max, step_r,training=False, mode = 'all', num = 100, truth=0):
         self._index=-1
 
 
@@ -15,6 +15,7 @@ class Pose_Accumulator:
         #self.allPoses=[]
         self.allResults=[]
         self.count=0
+        self.outputs=[]
 
 
 
@@ -49,7 +50,17 @@ class Pose_Accumulator:
                 r = random.uniform(0,360)
                 r_rad = math.radians(r)
                 self.allPoses[i] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
+                self.outputs.append(0)
 
+
+
+            x=truth[0]
+            y=truth[1]
+            r=truth[2]
+            r_rad = math.radians(r)
+            self.outputs.append(1)
+            self.allPoses[self.size]=[x, y, math.cos(r_rad), math.sin(r_rad)]
+            self.size+=1
 
     def __iter__(self):
         #return self.allPoses[self._index]
@@ -59,9 +70,13 @@ class Pose_Accumulator:
         self.allResults[self._index]=result
     def pose(self):
         return self.allPoses[self._index]
+
+    def truth(self):
+        return self.outputs[self._index]
+
     def __next__(self):
         self._index+=1
         if(self._index>=self.count):
             raise StopIteration
 
-        return self.allPoses[self._index]
+        return self

@@ -32,6 +32,7 @@ def main() -> int:
 
     for file in files:
         image, ground_truth = load_image(file)
+        print(ground_truth)
         controller.sample_space(image,x_step,y_step,r_step,truth=ground_truth,training=training)
 
 
