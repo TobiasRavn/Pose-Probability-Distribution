@@ -1,5 +1,3 @@
-
-
 import sys
 import os
 import glob
@@ -8,6 +6,7 @@ import numpy as np
 
 from lib.Controller import *
 from lib.load_image import *
+from lib.image_pipeline import *
 
 
 
@@ -18,9 +17,14 @@ def main() -> int:
     dir = "blenderproc/data"
     training = True
 
-
     files=glob.glob(dir+"/*.hdf5")
     image, ground_truth = load_image(files[0])
+
+    # ## Used for testing image rotation through image_pipeline class
+    # transformer = ImageTransformer(image, save_folder="output")
+    # transformer.rotate(90)
+    # ## Skew all images by (0.2, 0.3) and save to output_skew folder
+    # transformer.skew(x=0.2, y=0.3)
 
     img=np.array(image)
     size=img.shape
