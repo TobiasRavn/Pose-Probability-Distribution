@@ -90,3 +90,36 @@ class ImageTransformer:
         )
 
         return np.array(skewed_array)
+
+    def salt_and_pepper_noise(self, amount):
+        if isinstance(self.images, Image.Image):
+            # If only one image is given, convert to a list
+            self.images = [self.images]
+
+        for i, image in enumerate(self.images):
+            image_array = np.array(image)
+            noised_array = self._add_salt_and_pepper_noise(image_array, amount)
+            output_path = self._get_output_path(f"image_{i}.hdf5")
+            with h5py.File(output_path, 'w') as f:
+                f.create_dataset('colors', data=noised_array)
+                f.create_dataset('ground_truth', data="")  # You may want to change this
+
+            print(f"Image saved to {output_path}")
+            plt.imshow(noised_array)
+            plt.show()
+
+    def _add_salt_and_pepper_noise(self, image_array, amount):
+        height, width = image_array.shape[0], image_array.shape[1]
+        noise_pixels = int(height * width * amount / 100)
+
+        # Add salt noise
+        salt_pixels = np.random.randint(0, height, noise_pixels)
+        salt_columns = np.random.randint(0, width, noise_pixels)
+        image_array[salt_pixels, salt_columns] = 255
+
+        # Add pepper noise
+        pepper_pixels = np.random.randint(0, height, noise_pixels)
+        pepper_columns = np.random.randint(0, width, noise_pixels)
+        image_array[pepper_pixels, pepper_columns] = 0
+
+        return image_array

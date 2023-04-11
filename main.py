@@ -26,6 +26,9 @@ def main() -> int:
     # ## Skew all images by (0.2, 0.3) and save to output_skew folder
     # transformer.skew(x=0.2, y=0.3)
 
+    # transformer = ImageTransformer(image)
+    # transformer.salt_and_pepper_noise(50)  # Add 10% salt and pepper noise to all images
+
     img=np.array(image)
     size=img.shape
     controller = Controller(size)
