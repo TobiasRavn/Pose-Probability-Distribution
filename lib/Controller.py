@@ -46,6 +46,34 @@ class Controller:
         # sample space
         # return matrix of size [(x_max-x_min)/x_step), (y_max-y_min)/y_step),(r_max-r_min)/r_step)]
 
+    def sample_space_all_at_once(self, image, x_step, y_step, r_step, truth=0, training=False):
+        descriptor = self.descriptor.get_image_descriptor_array(image)
+        # convert image to descriptor from 1x2048 to 2048
+        descriptor = descriptor.flatten()
+
+        poses = 0
+        if (training == True):
+            poses = Pose_Accumulator(x_step, self.x_min, self.x_max,
+                                     y_step, self.y_min, self.y_max,
+                                     r_step,
+                                     training=training, truth=truth, mode='random')
+        else:
+            poses = Pose_Accumulator(x_step, self.x_min, self.x_max,
+                                     y_step, self.y_min, self.y_max,
+                                     r_step,
+                                     training=training, truth=truth)
+
+
+        if (training):
+            poses.setAllResults(self.mlp.train(descriptor, poses.allPoses, poses.allResults))
+        else:
+            poses.setAllResults(self.mlp.get(descriptor, poses.allPoses))
+        # print mean of all results
+        print("mean of wrong pose lose: ", np.mean(poses.allResults[0:99]), " correct pose lose: ",
+              np.mean(poses.allResults[100]))
+
+        # sample space
+        # return matrix of size [(x_max-x_min)/x_step), (y_max-y_min)/y_step),(r_max-r_min)/r_step)]
 
     def sample_space_train(self, image, ground_truth, x_step, y_step, r_step):
         #sample space

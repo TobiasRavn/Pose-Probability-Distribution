@@ -42,7 +42,7 @@ def main() -> int:
             image, ground_truth = load_image(file)
             #print(ground_truth)
             print("file: ",count,"/",len(files) , " epoch: ",epoch,"/", epochs)
-            controller.sample_space(image,x_step,y_step,r_step,truth=ground_truth,training=training)
+            controller.sample_space_all_at_once(image,x_step,y_step,r_step,truth=ground_truth,training=training)
 
 
     return 0

@@ -59,7 +59,7 @@ class Pose_Accumulator:
             x , y, r = float(x), float(y), float(r)
             r_rad = math.radians(r)
             self.outputs.append(1)
-            self.allPoses[self.size]=[x, y, math.cos(r_rad), math.sin(r_rad)]
+            self.allPoses[self.size]=np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
             self.size+=1
             self.count=self.size
 
@@ -75,6 +75,8 @@ class Pose_Accumulator:
     def output(self): #True Output
         return self.outputs[self._index]
 
+    def setAllResults(self, results):
+        self.allResults=results
     def __next__(self):
         self._index+=1
         if(self._index>=self.count):
