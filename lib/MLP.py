@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
+import os
 
 #https://keras.io/guides/writing_a_training_loop_from_scratch/
 class MLP:
@@ -65,10 +66,12 @@ class MLP:
         return loss_value
 
     def save_MLP(self, path):
-        pass
-        #save MLP
-        pass
+        if not os.path.exists(path):
+            os.makedirs(path)
+        data_file_path = os.path.join(path, "MLP.npy")
+        np.save(data_file_path, self.Q_table)
+
+
     def load_MLP(self, path):
-        pass
-        #load MLP
-        pass
+        data_file_path = os.path.join(path, "MLP.npy")
+        self.Q_table = np.load(data_file_path)
