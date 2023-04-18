@@ -11,5 +11,5 @@ def load_image(path):
     ground_truth = ast.literal_eval(dict_str)
     f.close()
     ## Used for image_pipeline class
-    image = Image.fromarray(image, mode='RGB')
+    #image = Image.fromarray(image, mode='RGB')
     return image, ground_truth

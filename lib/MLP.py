@@ -8,7 +8,7 @@ class MLP:
     def __init__(self, lenDiscriptors, lenPose):
         self.lenDiscriptors = lenDiscriptors
         self.lenPose = lenPose
-        self.learning_rate = 0.0000000001
+        self.learning_rate = 1e-2
         #define MLP
         inputs = keras.Input(shape=(self.lenDiscriptors+self.lenPose,), name="Descrip_and_pose")
         x = layers.Dense(256, activation="relu", name="dense_1")(inputs)
@@ -39,8 +39,7 @@ class MLP:
         x = tf.convert_to_tensor(x)
         return x
 
-    def train(self, features, position, output):
-        pass
+    def train_single(self, features, position, output):
         #train MLP
         #concatenate features and position
         x = self.convert_to_tensor(features, position)
@@ -50,6 +49,28 @@ class MLP:
         y = tf.reshape(y, (1,1))
         # train step
         loss_value = self.train_step(x, y)
+        print("x shape: ", x.shape, " y shape: ", y.shape)
+        #print("Training loss: ", loss_value.numpy())
+        return loss_value.numpy()
+    
+    def train(self, features, position, output):
+        #train MLP
+        #copy the 1x2048 feature matrix into 101x2048 matrix
+        features = np.repeat(features, 101, axis=0)
+        #make tensor of size (None, lenDiscriptors+lenPose)
+        x = np.concatenate((features, position), axis=1)
+        #convert to tensor
+        x = tf.convert_to_tensor(x)
+        #y = tf.convert_to_tensor(output)
+        #convert output to float32 tensor and reshape
+        y = tf.convert_to_tensor(output, dtype=tf.float32)
+        # train step
+        loss_value , logits = self.train_step(x, y)
+        # print("logits: ", logits)
+        logits_norm = tf.nn.softmax(logits, axis=0)
+        print("loss value: ", loss_value)
+        print("should be 0 " , np.mean(logits_norm.numpy()[0:99]), " should be 1 ", np.mean(logits_norm.numpy()[-1]))
+        #print("loss value: ", loss_value)
         #print("Training loss: ", loss_value.numpy())
         return loss_value.numpy()
 
@@ -57,12 +78,13 @@ class MLP:
     def train_step(self, x, y):
         with tf.GradientTape() as tape:
             logits = self.model(x, training=True)
-            loss_value = self.loss_fn(y, logits)
-            #loss_value = abs(tf.reduce_mean(logits))
+            logits_norm = tf.nn.softmax(logits, axis=0)
+            loss_value = -tf.math.log(logits_norm[-1]*10)
+            #loss_value = self.loss_fn(y, logits)
         grads = tape.gradient(loss_value, self.model.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
         self.train_acc_metric.update_state(y, logits)
-        return loss_value
+        return loss_value , logits
 
     def save_MLP(self, path):
         pass

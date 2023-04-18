@@ -6,7 +6,7 @@ import numpy as np
 
 from lib.Controller import *
 from lib.load_image import *
-from lib.image_pipeline import *
+# from lib.image_pipeline import *
 
 
 

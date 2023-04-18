@@ -62,6 +62,8 @@ class Pose_Accumulator:
             self.allPoses[self.size]=np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
             self.size+=1
             self.count=self.size
+        self.outputs=np.array(self.outputs).reshape(-1,1)
+
 
     def __iter__(self):
         #return self.allPoses[self._index]
