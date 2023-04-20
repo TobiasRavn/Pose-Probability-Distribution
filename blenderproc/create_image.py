@@ -1,7 +1,6 @@
 #create picture with blenderproc
 import blenderproc as bproc
 import numpy as np
-import bpy
 import sys
 import os
 
