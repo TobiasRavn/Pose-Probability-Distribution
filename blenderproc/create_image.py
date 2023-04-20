@@ -2,6 +2,23 @@
 import blenderproc as bproc
 import numpy as np
 import bpy
+import sys
+import os
+
+
+#take input argument and save as int
+if len(sys.argv) > 1:
+    pictures = sys.argv[1]
+    #try to convert to int
+    try:
+        pictures = int(pictures)
+    except:
+        print("Argument is not an integer")
+        sys.exit()
+else:
+    print("Arguments: amount of pictures to create")
+    sys.exit()
+
 
 #initialize the blenderproc environment
 bproc.init()
@@ -46,7 +63,7 @@ poses = 0
 # for x in np.arange(-0.3, 0.31, 0.3):
 #     for y in np.arange(-0.3, 0.31, 0.3):
 # for r in np.arange(0, 360, 90):
-for i in range(0, 10):
+for i in range(0, pictures):
     x = np.random.uniform(-0.3, 0.3)
     y = np.random.uniform(-0.3, 0.3)
     r = np.random.uniform(0, 360)    
