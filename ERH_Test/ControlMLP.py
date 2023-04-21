@@ -82,13 +82,6 @@ class PoseEstimationDataset(keras.utils.Sequence):
     def __len__(self):
         return int(np.floor(len(self.images) / self.batch_size))
 
-
-    # def __getitem__(self, idx):
-    #     image = Image.fromarray(self.image_arrays[idx])
-    #     if self.transform:
-    #         image = self.transform(image)
-    #     ground_truth = [float(x) for x in self.ground_truths[idx]]
-    #     return np.array(image), np.array(ground_truth, dtype=np.float32)
     def __getitem__(self, index):
         indexes = self.indexes[index * self.batch_size:(index + 1) * self.batch_size]
 
@@ -124,25 +117,6 @@ class PoseEstimationDataset(keras.utils.Sequence):
         return X, y
 
 
-
-
-
-# class MLP:
-#     def __init__(self, input_size):
-#         self.model = keras.Sequential()
-#         self.input_size = input_size
-#         self.learning_rate = 1e-6
-
-#         # Define MLP
-#         self.model.add(layers.Input(shape=(self.input_size,), name="input"))
-#         self.model.add(layers.Dense(256, activation="relu", name="dense_1"))
-#         self.model.add(layers.Dense(256, activation="relu", name="dense_2"))
-#         self.model.add(layers.Dense(2, name="predictions"))
-
-#         # Define optimizer and loss function
-#         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
-#         self.model.compile(optimizer=self.optimizer, loss='mse')
-
 class MLP:
     def __init__(self, descriptor_shape):
         self.model = Sequential([
@@ -158,26 +132,6 @@ class MLP:
         # Define optimizer and loss function
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         self.model.compile(optimizer=self.optimizer, loss='mse')
-
-
-
-# class MLP:
-#     def __init__(self, input_size):
-#         self.input_size = input_size
-#         self.learning_rate = 1e-6
-
-#         self.model = Sequential([
-#             Dense(256, activation='relu', input_shape=(self.input_size,), name='dense_1'),
-#             Dense(256, activation='relu', name='dense_2'),
-#             Dense(2, activation='softmax', name='predictions')
-#         ])
-
-#         # Define optimizer and loss function
-#         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
-#         self.model.compile(optimizer=self.optimizer, loss='mse')
-
-
-
 
 def plotHeatmap(predictions, ground_truths):
     # Construct covariance matrix
@@ -246,7 +200,7 @@ def load_image(path):
     return image, ground_truth
 
 def main():
-    dir = "/home/reventlov/RobCand/2. Semester/Project_AR/IPDF/data"
+    dir = "/home/reventlov/RobCand/2. Semester/Project_AR/IPDF/data25"
     files = glob.glob(dir + "/*.hdf5")
 
     image_arrays = []
@@ -273,8 +227,6 @@ def main():
     descriptor_shape = (1, image_descriptor.get_length_of_visual_description())
 
     # Prepare the dataset
-    # train_dataset = PoseEstimationDataset(train_image_arrays, train_ground_truths)
-    # val_dataset = PoseEstimationDataset(val_image_arrays, val_ground_truths)
     train_dataset = PoseEstimationDataset(train_image_arrays, train_ground_truths, image_descriptor)    
     val_dataset = PoseEstimationDataset(val_image_arrays, val_ground_truths, image_descriptor)
 
@@ -301,65 +253,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-# def main():
-#     dir = "/home/reventlov/RobCand/2. Semester/Project_AR/IPDF/data"
-#     files = glob.glob(dir + "/*.hdf5")
-
-#     image_arrays = []
-#     ground_truths = []
-
-#     for file in files:
-#         image, ground_truth = load_image(file)
-#         image_arrays.append(image)
-#         ground_truths.append(ground_truth)
-
-#     image_arrays = np.array(image_arrays)
-#     ground_truths = np.array(ground_truths)
-
-#     # Split the dataset into training and validation sets
-#     train_image_arrays, val_image_arrays, train_ground_truths, val_ground_truths = train_test_split(image_arrays, ground_truths, test_size=0.1, random_state=42)
-
-
-#     image_descriptor = Descriptor(image_size=(1000, 1000, 3))
-
-
-#     print(f"Number of training images: {len(train_image_arrays)}")
-#     print(f"Number of validation images: {len(val_image_arrays)}")
-
-#     input("Press any key to continue...")
-
-#     input_size = len(train_image_arrays)
-#     #model = MLP(input_size)
-
-
-#     # Prepare the dataset
-#     train_dataset = PoseEstimationDataset(train_image_arrays, train_ground_truths)
-#     val_dataset = PoseEstimationDataset(val_image_arrays, val_ground_truths)
-
-#     descriptor_shape = (1, image_descriptor.get_length_of_visual_description())
-#     model = MLP(descriptor_shape)
-
-#     #model = MLP(64 * 64 * 3)
-#     #model = MLP((1000, 1000, 3))
-
-
-#     model.model.summary()
-
-#     num_epochs = 10
-#     model.model.fit(train_dataset, epochs=num_epochs, validation_data=val_dataset)
-
-#     # Save the model
-#     model.model.save("pose_estimation_model.h5")
-
-#     # Predict the poses for validation images
-#     predictions = predict_poses(model, val_image_arrays, None)
-#     predictions = [(x[0], x[1]) for x in predictions]
-
-#     # Compute errors
-#     # ... (same as before) ...
-
-#     # Plot heatmap with predicted and ground truth coordinates
-#     plotHeatmap(predictions, val_ground_truths.tolist())
-
-# if __name__ == "__main__":
-#     main()
