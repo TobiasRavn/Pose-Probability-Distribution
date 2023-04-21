@@ -8,6 +8,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.utils import to_categorical
+from keras.models import load_model
 
 from keras.models import Sequential
 from keras.layers import Dense, Flatten
@@ -117,11 +118,26 @@ class PoseEstimationDataset(keras.utils.Sequence):
         return X, y
 
 
+# class MLP:
+#     def __init__(self, descriptor_shape):
+#         self.model = Sequential([
+#             Flatten(input_shape=descriptor_shape),  # Add Flatten layer to reshape the input
+#             Dense(256, activation='relu', name='dense_1'),
+#             Dense(256, activation='relu', name='dense_2'),
+#             Dense(2, activation='softmax', name='predictions')
+#         ])
+
+#         self.descriptor_shape = descriptor_shape
+#         self.learning_rate = 1e-6
+
+#         # Define optimizer and loss function
+#         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+#         self.model.compile(optimizer=self.optimizer, loss='mse')
+
 class MLP:
     def __init__(self, descriptor_shape):
         self.model = Sequential([
-            Flatten(input_shape=descriptor_shape),  # Add Flatten layer to reshape the input
-            Dense(256, activation='relu', name='dense_1'),
+            Dense(256, activation='relu', input_shape=descriptor_shape, name='dense_1'),  # Modify the input shape
             Dense(256, activation='relu', name='dense_2'),
             Dense(2, activation='softmax', name='predictions')
         ])
@@ -132,6 +148,7 @@ class MLP:
         # Define optimizer and loss function
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
         self.model.compile(optimizer=self.optimizer, loss='mse')
+
 
 def plotHeatmap(predictions, ground_truths):
     # Construct covariance matrix
@@ -157,7 +174,9 @@ def plotHeatmap(predictions, ground_truths):
 
         # Add predicted pose as a red dot and ground truth as a blue dot
         ax.plot(x_pred, y_pred, marker='o', markersize=10, color="red")
-        ax.plot(ground_truths[i][0], ground_truths[i][1], marker='o', markersize=10, color="blue")
+        #ax.plot(ground_truths[i][0], ground_truths[i][1], marker='o', markersize=10, color="blue")
+        ax.plot([ground_truths[i][0]], [ground_truths[i][1]], marker='o', markersize=10, color="blue")
+
 
     # Move colorbar to the right side
     cbar = plt.colorbar(sc, ax=ax, orientation='vertical', pad=0.05, shrink=0.7, aspect=10, 
@@ -176,17 +195,57 @@ def plotHeatmap(predictions, ground_truths):
     plt.show()
 
 
-def predict_poses(model, image_arrays, transform):
+# def predict_poses(model, image_arrays, transform):
+#     outputs = []
+#     for image_array in image_arrays:
+#         image = Image.fromarray(image_array)
+#         if transform:
+#             image = transform(image)
+#         #image = np.array(image).reshape(1, -1)
+#         image = np.array(image)
+#         # Assuming 'input_data' is your input data with shape (None, 3000000)   
+#         image = tf.reshape(image, (-1, 1, 2048))
+#         output = model.model.predict(image)
+#         x, y = output[0]
+#         outputs.append((x, y))
+#     return outputs
+
+# def predict_poses(model, image_arrays, image_descriptor):
+#     outputs = []
+#     for image_array in image_arrays:
+#         # Get the image descriptor
+#         image_descriptor_array = image_descriptor.get_image_descriptor_array(image_array)
+
+#         # Use the image descriptor as input to the model
+#         output = model.model.predict(image_descriptor_array)
+
+#         x, y = output[0]
+#         outputs.append((x, y))
+#     return outputs
+
+def predict_poses(model, image_arrays, image_descriptor):
     outputs = []
     for image_array in image_arrays:
-        image = Image.fromarray(image_array)
-        if transform:
-            image = transform(image)
-        image = np.array(image).reshape(1, -1)
-        output = model.model.predict(image)
-        x, y = output[0]
+        # Get the image descriptor
+        image_descriptor_array = image_descriptor.get_image_descriptor_array(image_array)
+
+        # Add a batch dimension to the image descriptor array
+        image_descriptor_array = np.expand_dims(image_descriptor_array, axis=0)
+
+        # Use the image descriptor as input to the model
+        output = model.model.predict(image_descriptor_array)
+
+        # Remove extra dimensions
+        output = np.squeeze(output)
+
+        x, y = output
         outputs.append((x, y))
     return outputs
+
+
+
+
+
 
 
 def load_image(path):
@@ -234,14 +293,26 @@ def main():
 
     model.model.summary()
 
+    # Print the descriptor shape
+    print("Descriptor shape:", descriptor_shape)
+
+
     num_epochs = 10
     model.model.fit(train_dataset, epochs=num_epochs, validation_data=val_dataset)
 
     # Save the model
     model.model.save("pose_estimation_model.h5")
 
+    # Load the saved model
+    saved_model = load_model("pose_estimation_model.h5")
+
+    # Print the summary of the loaded model
+    saved_model.summary()
+
+    predictions = predict_poses(model, val_image_arrays, image_descriptor)
+
     # Predict the poses for validation images
-    predictions = predict_poses(model, val_image_arrays, None)
+    #predictions = predict_poses(model, val_image_arrays, None)
     predictions = [(x[0], x[1]) for x in predictions]
 
     # Compute errors
@@ -252,4 +323,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
