@@ -117,14 +117,12 @@ class PoseEstimationDataset(keras.utils.Sequence):
 
         return X, y
 
-
 # class MLP:
 #     def __init__(self, descriptor_shape):
 #         self.model = Sequential([
-#             Flatten(input_shape=descriptor_shape),  # Add Flatten layer to reshape the input
-#             Dense(256, activation='relu', name='dense_1'),
+#             Dense(256, activation='relu', input_shape=descriptor_shape, name='dense_1'),  # Modify the input shape
 #             Dense(256, activation='relu', name='dense_2'),
-#             Dense(2, activation='softmax', name='predictions')
+#             Dense(3, activation='softmax', name='predictions')
 #         ])
 
 #         self.descriptor_shape = descriptor_shape
@@ -133,7 +131,6 @@ class PoseEstimationDataset(keras.utils.Sequence):
 #         # Define optimizer and loss function
 #         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 #         self.model.compile(optimizer=self.optimizer, loss='mse')
-
 class MLP:
     def __init__(self, descriptor_shape):
         self.model = Sequential([
@@ -150,51 +147,66 @@ class MLP:
         self.model.compile(optimizer=self.optimizer, loss='mse')
 
 
-def plotHeatmap(predictions, ground_truths):
-    # Construct covariance matrix
-    var_x = 0.1
-    var_y = 0.1
-    var_z = 0.1
-    corr_xy = 0.5
-    cov_matrix = np.array([[var_x, corr_xy*np.sqrt(var_x*var_y), 0],
-                           [corr_xy*np.sqrt(var_x*var_y), var_y, 0],
-                           [0, 0, var_z]])
+# def plotHeatmap(predictions, ground_truths):
 
+#     print("Predictions:", predictions)
+#     print("Ground Truths:", ground_truths)
+#     fig = plt.figure(figsize=(8, 6))
+#     ax = fig.add_subplot(111, projection='3d')
+
+#     for i, (x_pred, y_pred, r_pred) in enumerate(predictions):
+#         # Add predicted pose as a red dot
+#         ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=10, color="red", label='Predicted Pose')
+
+#         # Add ground truth as a blue dot
+#         gt_x, gt_y, gt_z = map(float, ground_truths[i])
+#         ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue", label='Ground Truth')
+
+#     # Set axis labels and titles
+#     ax.set_xlabel("X-coor")
+#     ax.set_ylabel("Y-coor")
+#     ax.set_zlabel("Z-coor")
+#     ax.set_title("Predicted and Ground Truth Poses", fontsize=20)
+#     ax.legend()
+
+#     #plt.show()
+#     fig.savefig('plot/heatmap.png')  # Replace 'plot_folder' with the name of the folder you want to save the plot in
+#     plt.close(fig)
+# Define function to plot heatmap
+def plotHeatmap(predictions, ground_truths):
+
+    print("Predictions:", predictions)
+    print("Ground Truths:", ground_truths)
     fig = plt.figure(figsize=(8, 6))
-    ax = fig.add_subplot(projection='3d')
+    ax = fig.add_subplot(111, projection='3d')
 
     for i, (x_pred, y_pred, r_pred) in enumerate(predictions):
-        # Calculate probabilities using multivariate Gaussian distribution
-        xyz = np.vstack((x_pred, y_pred, r_pred)).T
-        prob = np.exp(-0.5 * np.sum(xyz.dot(np.linalg.inv(cov_matrix)) * xyz, axis=1))
+        # Add predicted pose as a red dot
+        ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=10, color="red", label='Predicted Pose')
 
-        # Create a scatter plot with a colorbar
-        cmap = plt.get_cmap("hsv")
-        norm = plt.Normalize(vmin=0, vmax=1)
-        colors = cmap(norm(prob))
-
-        sc = ax.scatter(x_pred, y_pred, r_pred, c=colors, cmap=cmap, s=20, edgecolors="black")
-
-        # Add predicted pose as a red dot and ground truth as a blue dot
-        ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=10, color="red")
-        ax.plot([ground_truths[i][0]], [ground_truths[i][1]], [ground_truths[i][2]], marker='o', markersize=10, color="blue")
-
-    # Move colorbar to the right side
-    cbar = plt.colorbar(sc, ax=ax, orientation='vertical', pad=0.05, shrink=0.7, aspect=10, 
-                        fraction=0.15, label='Probability')
-    cbar.ax.tick_params(labelsize=10)
-    cax = cbar.ax
-    cax.yaxis.set_label_position('right')
-    cax.yaxis.set_ticks_position('right')
-    cax.set_ylabel('Probability', rotation=-90, va='bottom', fontsize=14, labelpad=10)
+        # Add ground truth as a blue dot
+        gt_x, gt_y, gt_z = map(float, ground_truths[i])
+        ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue", label='Ground Truth')
 
     # Set axis labels and titles
     ax.set_xlabel("X-coor")
     ax.set_ylabel("Y-coor")
     ax.set_zlabel("Z-coor")
-    ax.set_title("Probability of Pose Estimation of Cup in Three Planes", fontsize=20)
+    ax.set_title("Predicted and Ground Truth Poses", fontsize=20)
+    ax.legend()
 
-    plt.show()
+    # #plt.show()
+    # fig.savefig('/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/heatmap.png')  # Replace 'plot_folder' with the name of the folder you want to save the plot in
+    # plt.close(fig)
+
+        # Create a unique filename for the plot
+    filename = f"heatmap_{len(ground_truths)}.png"
+    # Save the plot as a PNG image in the 'plots' folder
+    plt.savefig(f'/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/{filename}')
+    plt.close(fig)
+
+
+
 
 def predict_poses(model, image_arrays, image_descriptor):
     outputs = []
@@ -228,7 +240,7 @@ def load_image(path):
     return image, ground_truth
 
 def main():
-    dir = "/home/reventlov/RobCand/2. Semester/Project_AR/IPDF/data25"
+    dir = "/home/reventlov/RobCand/2. Semester/Project_AR/IPDF/data5"
     files = glob.glob(dir + "/*.hdf5")
 
     image_arrays = []
@@ -267,7 +279,16 @@ def main():
 
 
     num_epochs = 10
-    model.model.fit(train_dataset, epochs=num_epochs, validation_data=val_dataset)
+    # Initialize a list to store the average loss for each epoch
+    losses = []
+
+    for epoch in range(num_epochs):
+        history = model.model.fit(train_dataset, epochs=1, validation_data=val_dataset)
+
+        # Collect the training loss for the current epoch
+        loss = history.history['loss'][0]
+        losses.append(loss)
+        print(f"Epoch: {epoch+1}, Loss: {loss:.4f}")
 
     # Save the model
     model.model.save("pose_estimation_model.h5")
@@ -277,18 +298,40 @@ def main():
 
     # Print the summary of the loaded model
     saved_model.summary()
+    # Access the model's layers
+    # layers = saved_model.layers
+
+    # # Print the layers' names and their corresponding weights
+    # for layer in layers:
+    #     print(f"Layer name: {layer.name}")
+    #     print(f"Weights: {layer.get_weights()}")
+
 
     predictions = predict_poses(model, val_image_arrays, image_descriptor)
 
     # Predict the poses for validation images
-    #predictions = predict_poses(model, val_image_arrays, None)
     predictions = [(x[0], x[1],  x[2]) for x in predictions]
-
-    # Compute errors
-    # ... (same as before) ...
 
     # Plot heatmap with predicted and ground truth coordinates
     plotHeatmap(predictions, val_ground_truths.tolist())
+
+    # Create a list of epoch numbers
+    epochs = list(range(1, len(losses) + 1))
+
+    # Create the MSE-loss plot
+    plt.plot(epochs, losses, marker='o', linestyle='-', markersize=6)
+    plt.xlabel('Epochs')
+    plt.ylabel('MSE Loss')
+    plt.title('Loss vs. Epochs')
+
+    # Save the plot as a PNG image in the 'plots' folder
+    #plt.savefig('/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/mse_loss.png')
+    # Create a unique filename for the plot
+    filename = f"mse_Epoc{num_epochs}_Loss{len(train_image_arrays) + len(val_image_arrays)}.png"
+
+    # Save the plot as a PNG image in the 'plots' folder
+    plt.savefig(f'/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/{filename}')
+
 
 if __name__ == "__main__":
     main()

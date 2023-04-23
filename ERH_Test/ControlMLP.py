@@ -116,24 +116,7 @@ class PoseEstimationDataset(keras.utils.Sequence):
             y[i,] = self.ground_truths[index]
 
         return X, y
-
-
-# class MLP:
-#     def __init__(self, descriptor_shape):
-#         self.model = Sequential([
-#             Flatten(input_shape=descriptor_shape),  # Add Flatten layer to reshape the input
-#             Dense(256, activation='relu', name='dense_1'),
-#             Dense(256, activation='relu', name='dense_2'),
-#             Dense(2, activation='softmax', name='predictions')
-#         ])
-
-#         self.descriptor_shape = descriptor_shape
-#         self.learning_rate = 1e-6
-
-#         # Define optimizer and loss function
-#         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
-#         self.model.compile(optimizer=self.optimizer, loss='mse')
-
+    
 class MLP:
     def __init__(self, descriptor_shape):
         self.model = Sequential([
@@ -194,35 +177,6 @@ def plotHeatmap(predictions, ground_truths):
 
     plt.show()
 
-
-# def predict_poses(model, image_arrays, transform):
-#     outputs = []
-#     for image_array in image_arrays:
-#         image = Image.fromarray(image_array)
-#         if transform:
-#             image = transform(image)
-#         #image = np.array(image).reshape(1, -1)
-#         image = np.array(image)
-#         # Assuming 'input_data' is your input data with shape (None, 3000000)   
-#         image = tf.reshape(image, (-1, 1, 2048))
-#         output = model.model.predict(image)
-#         x, y = output[0]
-#         outputs.append((x, y))
-#     return outputs
-
-# def predict_poses(model, image_arrays, image_descriptor):
-#     outputs = []
-#     for image_array in image_arrays:
-#         # Get the image descriptor
-#         image_descriptor_array = image_descriptor.get_image_descriptor_array(image_array)
-
-#         # Use the image descriptor as input to the model
-#         output = model.model.predict(image_descriptor_array)
-
-#         x, y = output[0]
-#         outputs.append((x, y))
-#     return outputs
-
 def predict_poses(model, image_arrays, image_descriptor):
     outputs = []
     for image_array in image_arrays:
@@ -241,11 +195,6 @@ def predict_poses(model, image_arrays, image_descriptor):
         x, y = output
         outputs.append((x, y))
     return outputs
-
-
-
-
-
 
 
 def load_image(path):
@@ -306,8 +255,9 @@ def main():
         # Print the descriptor shape
         print("Descriptor shape:", descriptor_shape)
 
+        num_epochs = 10 
 
-        num_epochs = 10
+        # Train and get the history
         model.model.fit(train_dataset, epochs=num_epochs, validation_data=val_dataset)
 
         # Save the model
@@ -326,7 +276,7 @@ def main():
         predictions = [(x[0], x[1]) for x in predictions]
 
         # Compute errors
-        # ... (same as before) ...
+        # ... (MISSING) ...
 
         # Plot heatmap with predicted and ground truth coordinates
         plotHeatmap(predictions, val_ground_truths.tolist())
