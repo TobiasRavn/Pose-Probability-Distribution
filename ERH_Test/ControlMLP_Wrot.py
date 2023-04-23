@@ -66,7 +66,7 @@ class Descriptor:
         self.vision_model = tf.keras.Model(self.input_image_size, layers_added)
 
 class PoseEstimationDataset(keras.utils.Sequence):
-    def __init__(self, images, ground_truths, image_descriptor, batch_size=1, shuffle=True):
+    def __init__(self, images, ground_truths, image_descriptor, batch_size=4, shuffle=True):
         self.images = images
         self.ground_truths = ground_truths
         self.image_descriptor = image_descriptor
@@ -117,20 +117,6 @@ class PoseEstimationDataset(keras.utils.Sequence):
 
         return X, y
 
-# class MLP:
-#     def __init__(self, descriptor_shape):
-#         self.model = Sequential([
-#             Dense(256, activation='relu', input_shape=descriptor_shape, name='dense_1'),  # Modify the input shape
-#             Dense(256, activation='relu', name='dense_2'),
-#             Dense(3, activation='softmax', name='predictions')
-#         ])
-
-#         self.descriptor_shape = descriptor_shape
-#         self.learning_rate = 1e-6
-
-#         # Define optimizer and loss function
-#         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
-#         self.model.compile(optimizer=self.optimizer, loss='mse')
 class MLP:
     def __init__(self, descriptor_shape):
         self.model = Sequential([
@@ -140,46 +126,17 @@ class MLP:
         ])
 
         self.descriptor_shape = descriptor_shape
-        #self.learning_rate = 1e-6
 
         # Learning rate scheduling
         self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-            initial_learning_rate=1e-6, # Set your desired initial learning rate
+            initial_learning_rate=1e-5, # Set your desired initial learning rate
             decay_steps=10000,
             decay_rate=0.9)
-
 
         # Define optimizer and loss function
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
         self.model.compile(optimizer=self.optimizer, loss='mse')
 
-
-# def plotHeatmap(predictions, ground_truths):
-
-#     print("Predictions:", predictions)
-#     print("Ground Truths:", ground_truths)
-#     fig = plt.figure(figsize=(8, 6))
-#     ax = fig.add_subplot(111, projection='3d')
-
-#     for i, (x_pred, y_pred, r_pred) in enumerate(predictions):
-#         # Add predicted pose as a red dot
-#         ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=10, color="red", label='Predicted Pose')
-
-#         # Add ground truth as a blue dot
-#         gt_x, gt_y, gt_z = map(float, ground_truths[i])
-#         ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue", label='Ground Truth')
-
-#     # Set axis labels and titles
-#     ax.set_xlabel("X-coor")
-#     ax.set_ylabel("Y-coor")
-#     ax.set_zlabel("Z-coor")
-#     ax.set_title("Predicted and Ground Truth Poses", fontsize=20)
-#     ax.legend()
-
-#     #plt.show()
-#     fig.savefig('plot/heatmap.png')  # Replace 'plot_folder' with the name of the folder you want to save the plot in
-#     plt.close(fig)
-# Define function to plot heatmap
 def plotHeatmap(predictions, ground_truths):
 
     print("Predictions:", predictions)
@@ -219,7 +176,47 @@ def plotHeatmap(predictions, ground_truths):
 
     return average_distance
 
+### TRY NEXT
+# def plotHeatmap(predictions, ground_truths):
 
+#     fig = plt.figure(figsize=(8, 6))
+#     ax = fig.add_subplot(111, projection='3d')
+
+#     for i in range(len(predictions)):
+#         x_pred, y_pred, r_pred = predictions[i]
+#         gt_x, gt_y, gt_z = map(float, ground_truths[i])
+
+#         # Add predicted pose as a red dot
+#         ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=10, color="red")
+
+#         # Add ground truth as a blue dot
+#         ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")
+
+#         # Connect the two dots with a line
+#         ax.plot([x_pred, gt_x], [y_pred, gt_y], [r_pred, gt_z], linestyle='--', linewidth=2, color="gray")
+
+#     # Set axis labels and titles
+#     ax.set_xlabel("X-coor")
+#     ax.set_ylabel("Y-coor")
+#     ax.set_zlabel("Z-coor")
+#     ax.set_title("Predicted and Ground Truth Poses", fontsize=20)
+
+#     # Calculate the average distance between predicted poses and ground truth poses
+#     distances = []
+#     for i, (x_pred, y_pred, r_pred) in enumerate(predictions):
+#         gt_x, gt_y, gt_z = map(float, ground_truths[i])
+#         distance = np.sqrt((x_pred - gt_x)**2 + (y_pred - gt_y)**2 + (r_pred - gt_z)**2)
+#         distances.append(distance)
+
+#     average_distance = np.mean(distances)
+
+#     # Create a unique filename for the plot
+#     filename = f"heatmap_{len(ground_truths)}.png"
+#     # Save the plot as a PNG image in the 'plots' folder
+#     plt.savefig(f'/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/{filename}')
+#     plt.close(fig)
+
+#     return average_distance
 
 
 def predict_poses(model, image_arrays, image_descriptor):
@@ -241,6 +238,39 @@ def predict_poses(model, image_arrays, image_descriptor):
         outputs.append((x, y, r))
     return outputs
 
+### TRY NEXT
+# def predict_poses(model, image_arrays, image_descriptor):
+#     outputs = []
+#     for i in range(len(image_arrays)):
+#         image_array = image_arrays[i]
+#         # Get the image descriptor
+#         image_descriptor_array = image_descriptor.get_image_descriptor_array(image_array)
+
+#         # Add a batch dimension to the image descriptor array
+#         image_descriptor_array = np.expand_dims(image_descriptor_array, axis=0)
+
+#         # Use the image descriptor as input to the model
+#         output = model.model.predict(image_descriptor_array)
+
+#         # Remove extra dimensions
+#         output = np.squeeze(output)
+
+#         x, y, r = output
+#         outputs.append((x, y, r))
+
+#     ground_truths = [] # Make sure to populate this list before the loop
+#     new_ground_truths = [] # Create a new list to store the ground truths
+#     predictions = [] # Initialize the predictions list, if not already done
+
+#     for i in range(len(outputs)):
+#         predictions.append(outputs[i])
+        
+#         if i < len(ground_truths):
+#             new_ground_truths.append(ground_truths[i])
+
+            
+
+#     return predictions, new_ground_truths
 
 
 def load_image(path):
@@ -260,7 +290,7 @@ def main():
     image_arrays = []
     ground_truths = []
 
-    for i in range(0, len(files), 1): # only load every 40 number of file
+    for i in range(0, len(files), 20): # only load every 40 number of file
         file = files[i]
         image, ground_truth = load_image(file)
         image_arrays.append(image)
@@ -293,7 +323,7 @@ def main():
     print("Descriptor shape:", descriptor_shape)
 
 
-    num_epochs = 20
+    num_epochs = 5
     # Initialize a list to store the average loss for each epoch
     losses = []
 
@@ -326,9 +356,6 @@ def main():
 
     # Predict the poses for validation images
     predictions = [(x[0], x[1],  x[2]) for x in predictions]
-
-    # Plot heatmap with predicted and ground truth coordinates
-    #plotHeatmap(predictions, val_ground_truths.tolist())
 
      # Initialize a list to store the average distances
     average_distances = []
