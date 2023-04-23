@@ -259,67 +259,77 @@ def load_image(path):
     return image, ground_truth
 
 def main():
-    dir = "/home/reventlov/RobCand/2. Semester/Project_AR/IPDF/data25"
-    files = glob.glob(dir + "/*.hdf5")
 
-    image_arrays = []
-    ground_truths = []
+    # Set the device you want to use
+    device = "/gpu:0" if tf.config.list_physical_devices('GPU') else "/cpu:0"
+    
+    # Print the selected device
+    print(f"Running on {device}")
 
-    for file in files:
-        image, ground_truth = load_image(file)
-        image_arrays.append(image)
-        ground_truths.append(ground_truth)
+    # Rest of your code inside the context manager
+    with tf.device(device):
+            
+        dir = "/home/reventlov/RobCand/2. Semester/Project_AR/IPDF/data25"
+        files = glob.glob(dir + "/*.hdf5")
 
-    image_arrays = np.array(image_arrays)
-    ground_truths = np.array(ground_truths)
+        image_arrays = []
+        ground_truths = []
 
-    # Split the dataset into training and validation sets
-    train_image_arrays, val_image_arrays, train_ground_truths, val_ground_truths = train_test_split(image_arrays, ground_truths, test_size=0.1, random_state=42)
+        for file in files:
+            image, ground_truth = load_image(file)
+            image_arrays.append(image)
+            ground_truths.append(ground_truth)
 
-    image_descriptor = Descriptor(image_size=(1000, 1000, 3))
+        image_arrays = np.array(image_arrays)
+        ground_truths = np.array(ground_truths)
 
-    print(f"Number of training images: {len(train_image_arrays)}")
-    print(f"Number of validation images: {len(val_image_arrays)}")
+        # Split the dataset into training and validation sets
+        train_image_arrays, val_image_arrays, train_ground_truths, val_ground_truths = train_test_split(image_arrays, ground_truths, test_size=0.1, random_state=42)
 
-    input("Press any key to continue...")
+        image_descriptor = Descriptor(image_size=(1000, 1000, 3))
 
-    descriptor_shape = (1, image_descriptor.get_length_of_visual_description())
+        print(f"Number of training images: {len(train_image_arrays)}")
+        print(f"Number of validation images: {len(val_image_arrays)}")
 
-    # Prepare the dataset
-    train_dataset = PoseEstimationDataset(train_image_arrays, train_ground_truths, image_descriptor)    
-    val_dataset = PoseEstimationDataset(val_image_arrays, val_ground_truths, image_descriptor)
+        input("Press any key to continue...")
 
-    model = MLP(descriptor_shape)
+        descriptor_shape = (1, image_descriptor.get_length_of_visual_description())
 
-    model.model.summary()
+        # Prepare the dataset
+        train_dataset = PoseEstimationDataset(train_image_arrays, train_ground_truths, image_descriptor)    
+        val_dataset = PoseEstimationDataset(val_image_arrays, val_ground_truths, image_descriptor)
 
-    # Print the descriptor shape
-    print("Descriptor shape:", descriptor_shape)
+        model = MLP(descriptor_shape)
+
+        model.model.summary()
+
+        # Print the descriptor shape
+        print("Descriptor shape:", descriptor_shape)
 
 
-    num_epochs = 10
-    model.model.fit(train_dataset, epochs=num_epochs, validation_data=val_dataset)
+        num_epochs = 10
+        model.model.fit(train_dataset, epochs=num_epochs, validation_data=val_dataset)
 
-    # Save the model
-    model.model.save("pose_estimation_model.h5")
+        # Save the model
+        model.model.save("pose_estimation_model.h5")
 
-    # Load the saved model
-    saved_model = load_model("pose_estimation_model.h5")
+        # Load the saved model
+        saved_model = load_model("pose_estimation_model.h5")
 
-    # Print the summary of the loaded model
-    saved_model.summary()
+        # Print the summary of the loaded model
+        saved_model.summary()
 
-    predictions = predict_poses(model, val_image_arrays, image_descriptor)
+        predictions = predict_poses(model, val_image_arrays, image_descriptor)
 
-    # Predict the poses for validation images
-    #predictions = predict_poses(model, val_image_arrays, None)
-    predictions = [(x[0], x[1]) for x in predictions]
+        # Predict the poses for validation images
+        #predictions = predict_poses(model, val_image_arrays, None)
+        predictions = [(x[0], x[1]) for x in predictions]
 
-    # Compute errors
-    # ... (same as before) ...
+        # Compute errors
+        # ... (same as before) ...
 
-    # Plot heatmap with predicted and ground truth coordinates
-    plotHeatmap(predictions, val_ground_truths.tolist())
+        # Plot heatmap with predicted and ground truth coordinates
+        plotHeatmap(predictions, val_ground_truths.tolist())
 
 if __name__ == "__main__":
     main()
