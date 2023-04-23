@@ -73,7 +73,7 @@ for i in range(0, pictures):
     data = bproc.renderer.render()
     ground_truth = [{"x": str(x), "y": str(y), "r": str(r)}]
     data["ground_truth"] = ground_truth
-    bproc.writer.write_hdf5("blenderproc/data/", data,append_to_existing_output=True)
+    bproc.writer.write_hdf5("blenderproc/data2000/", data,append_to_existing_output=True)
     print("Rendered pose: " + str(poses))
     poses += 1
 
@@ -94,7 +94,7 @@ for i in range(0, pictures):
 #data = bproc.renderer.render()
 
 #make dictionary which contains the rotation
-# ground_truth = [{"rotation": cup_obj.get_rotation_euler()[0]}]
-# data["ground_truth"] = ground_truth
-# #write the image to a file
-# bproc.writer.write_hdf5("blenderproc/data/", data)
+ground_truth = [{"rotation": cup_obj.get_rotation_euler()[0]}]
+data["ground_truth"] = ground_truth
+#write the image to a file
+bproc.writer.write_hdf5("blenderproc/data/", data)
