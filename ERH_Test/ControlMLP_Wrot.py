@@ -140,10 +140,17 @@ class MLP:
         ])
 
         self.descriptor_shape = descriptor_shape
-        self.learning_rate = 1e-6
+        #self.learning_rate = 1e-6
+
+        # Learning rate scheduling
+        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=1e-6, # Set your desired initial learning rate
+            decay_steps=10000,
+            decay_rate=0.9)
+
 
         # Define optimizer and loss function
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
         self.model.compile(optimizer=self.optimizer, loss='mse')
 
 
@@ -182,11 +189,11 @@ def plotHeatmap(predictions, ground_truths):
 
     for i, (x_pred, y_pred, r_pred) in enumerate(predictions):
         # Add predicted pose as a red dot
-        ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=10, color="red", label='Predicted Pose')
+        ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=10, color="red")#, label='PP')
 
         # Add ground truth as a blue dot
         gt_x, gt_y, gt_z = map(float, ground_truths[i])
-        ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue", label='Ground Truth')
+        ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")#, label='GT')
 
     # Set axis labels and titles
     ax.set_xlabel("X-coor")
@@ -195,15 +202,22 @@ def plotHeatmap(predictions, ground_truths):
     ax.set_title("Predicted and Ground Truth Poses", fontsize=20)
     ax.legend()
 
-    # #plt.show()
-    # fig.savefig('/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/heatmap.png')  # Replace 'plot_folder' with the name of the folder you want to save the plot in
-    # plt.close(fig)
+     # Calculate the average distance between predicted poses and ground truth poses
+    distances = []
+    for i, (x_pred, y_pred, r_pred) in enumerate(predictions):
+        gt_x, gt_y, gt_z = map(float, ground_truths[i])
+        distance = np.sqrt((x_pred - gt_x)**2 + (y_pred - gt_y)**2 + (r_pred - gt_z)**2)
+        distances.append(distance)
 
-        # Create a unique filename for the plot
+    average_distance = np.mean(distances)
+
+    # Create a unique filename for the plot
     filename = f"heatmap_{len(ground_truths)}.png"
     # Save the plot as a PNG image in the 'plots' folder
     plt.savefig(f'/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/{filename}')
     plt.close(fig)
+
+    return average_distance
 
 
 
@@ -240,13 +254,14 @@ def load_image(path):
     return image, ground_truth
 
 def main():
-    dir = "/home/reventlov/RobCand/2. Semester/Project_AR/IPDF/data5"
+    dir = "/home/reventlov/RobCand/2. Semester/Project_AR/IPDF/data"
     files = glob.glob(dir + "/*.hdf5")
 
     image_arrays = []
     ground_truths = []
 
-    for file in files:
+    for i in range(0, len(files), 1): # only load every 40 number of file
+        file = files[i]
         image, ground_truth = load_image(file)
         image_arrays.append(image)
         ground_truths.append(ground_truth)
@@ -278,7 +293,7 @@ def main():
     print("Descriptor shape:", descriptor_shape)
 
 
-    num_epochs = 10
+    num_epochs = 20
     # Initialize a list to store the average loss for each epoch
     losses = []
 
@@ -294,10 +309,10 @@ def main():
     model.model.save("pose_estimation_model.h5")
 
     # Load the saved model
-    saved_model = load_model("pose_estimation_model.h5")
+    #saved_model = load_model("pose_estimation_model.h5")
 
     # Print the summary of the loaded model
-    saved_model.summary()
+    #saved_model.summary()
     # Access the model's layers
     # layers = saved_model.layers
 
@@ -313,7 +328,35 @@ def main():
     predictions = [(x[0], x[1],  x[2]) for x in predictions]
 
     # Plot heatmap with predicted and ground truth coordinates
-    plotHeatmap(predictions, val_ground_truths.tolist())
+    #plotHeatmap(predictions, val_ground_truths.tolist())
+
+     # Initialize a list to store the average distances
+    average_distances = []
+    # Load different numbers of data points and plot the heatmaps
+    num_data_points_range = range(10, len(image_arrays) + 1, 10)
+    for num_data_points in num_data_points_range:
+        # Select a subset of data points
+        subset_image_arrays = image_arrays[:num_data_points]
+        subset_ground_truths = ground_truths[:num_data_points]
+
+        # Predict the poses for the subset of images
+        predictions = predict_poses(model, subset_image_arrays, image_descriptor)
+        predictions = [(x[0], x[1], x[2]) for x in predictions]
+
+        # Plot heatmap with predicted and ground truth coordinates and calculate the average distance
+        average_distance = plotHeatmap(predictions, subset_ground_truths.tolist())
+        average_distances.append(average_distance)
+
+    # Plot the relationship between the number of data points and the average distance
+    plt.plot(num_data_points_range, average_distances, marker='o', linestyle='-', markersize=6)
+    plt.xlabel('Number of Data Points')
+    plt.ylabel('Average Distance')
+    plt.title('Average Distance vs. Number of Data Points')
+
+    # Save the plot as a PNG image in the 'plots' folder
+    filename1 = f"average_distance_vs_num_data_points.png"
+    plt.savefig(f'/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/{filename1}')
+    plt.close()
 
     # Create a list of epoch numbers
     epochs = list(range(1, len(losses) + 1))
@@ -327,10 +370,11 @@ def main():
     # Save the plot as a PNG image in the 'plots' folder
     #plt.savefig('/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/mse_loss.png')
     # Create a unique filename for the plot
-    filename = f"mse_Epoc{num_epochs}_Loss{len(train_image_arrays) + len(val_image_arrays)}.png"
+    filename2 = f"mse_Epoc{num_epochs}_Loss{len(train_image_arrays) + len(val_image_arrays)}.png"
 
     # Save the plot as a PNG image in the 'plots' folder
-    plt.savefig(f'/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/{filename}')
+    plt.savefig(f'/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/{filename2}')
+    plt.close()
 
 
 if __name__ == "__main__":
