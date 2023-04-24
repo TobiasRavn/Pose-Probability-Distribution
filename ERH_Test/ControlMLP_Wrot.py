@@ -184,8 +184,8 @@ def predict_poses(model, image_arrays, image_descriptor):
         x, y, r = output
         outputs.append((x, y, r))
         #print(f"Predicted pose: ({x}, {y}, {r})")
-        #print("outputs: ", outputs)
-        #input("Press any key to continue...")
+        print("outputs: ", outputs)
+        input("Press any key to continue...")
     return outputs
 
 def load_image(path):
@@ -217,7 +217,7 @@ def main():
         ground_truths = []
         
         
-        for i in range(0, len(files), 20): # only load every 40 number of file
+        for i in range(0, len(files), 80): # only load every 40 number of file
             file = files[i]
             image, ground_truth = load_image(file)
             image_arrays.append(image)
@@ -249,11 +249,10 @@ def main():
         # Print the descriptor shape
         print("Descriptor shape:", descriptor_shape)
 
-        num_epochs = 15
+        num_epochs = 5
         # Initialize a list to store the average loss for each epoch
         losses = []
         for epoch in range(num_epochs):
-            #history = model.model.fit(train_dataset, epochs=1, validation_data=val_dataset)
             history = model.model.fit(train_dataset, epochs=num_epochs, validation_data=val_dataset)
 
             # Collect the training loss for the current epoch
