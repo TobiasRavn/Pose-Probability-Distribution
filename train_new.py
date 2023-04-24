@@ -48,6 +48,13 @@ dir = "blenderproc/data_500_first"
 
 dir = "blenderproc/data"
 files=glob.glob(dir+"/*.hdf5")
+
+random.shuffle(files)
+#split files into training and validation data
+train_data = files[:int(len(files)*0.8)]
+vali_data = files[int(len(files)*0.8):]
+
+
 #load first image to use img size
 image, ground_truth = load_image(files[0])
 img=np.array(image)
@@ -143,7 +150,7 @@ for epoch in range(epochs):
 
     #Validation
 
-    validations_set=random.sample(images, 100)
+    validations_set=random.sample(validations_set, 100)
 
     batches = [validations_set[x:x + batch_size] for x in range(0, len(validations_set), batch_size)]
     for count, batch in enumerate(batches):
