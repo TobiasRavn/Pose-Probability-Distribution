@@ -124,8 +124,41 @@ class MLP:
             decay_rate=0.9)
 
         # Define optimizer and loss function
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)            
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
         self.model.compile(optimizer=self.optimizer, loss='mse')
+    
+    # def __init__(self, descriptor_shape, image_descriptor):
+    #     self.model = Sequential([
+    #         Dense(256, activation='relu', input_shape=descriptor_shape, name='dense_1'),
+    #         Dense(256, activation='relu', name='dense_2'),
+    #         Dense(3, activation='softmax', name='predictions')
+    #     ])
+
+    #     self.descriptor_shape = descriptor_shape
+    #     self.image_descriptor = image_descriptor
+
+    #     # Learning rate scheduling
+    #     self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(
+    #         initial_learning_rate=1e-7,
+    #         decay_steps=10000,
+    #         decay_rate=0.9)
+
+    #     # Define optimizer
+    #     self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
+
+    #     # Custom loss function - compute_loss
+    #     self.loss_function = lambda poses, logits: compute_loss(self.model, self.image_descriptor, poses, logits)
+
+    #     self.model.compile(optimizer=self.optimizer, loss=self.loss_function)
+
+
+# def compute_loss(mlp_model, vision_description, poses, training=True):
+#     logits = mlp_model([vision_description, poses],
+#                        training=training)[Ellipsis, 0]
+
+#     logits_norm = tf.nn.softmax(logits, axis=-1)
+#     loss_value = -tf.reduce_mean(tf.math.log(logits_norm[:, -1]/(((0.6**2)*3.1415*2)/poses.shape[1]))) #index -1 because last one is the correct pose
+#     return loss_value
 
 def plotHeatmap(predictions, ground_truths):
 
@@ -169,8 +202,10 @@ def plotHeatmap(predictions, ground_truths):
 def predict_poses(model, image_arrays, image_descriptor):
     outputs = []
     for image_array in image_arrays:
-        # Get the image descriptor
+        # Get the image descriptor 
         image_descriptor_array = image_descriptor.get_image_descriptor_array(image_array)
+        print("image_descriptor_array: ", image_descriptor_array)
+        #input("Press any key to continue...")
 
         # Add a batch dimension to the image descriptor array
         image_descriptor_array = np.expand_dims(image_descriptor_array, axis=0)
@@ -185,7 +220,7 @@ def predict_poses(model, image_arrays, image_descriptor):
         outputs.append((x, y, r))
         #print(f"Predicted pose: ({x}, {y}, {r})")
         print("outputs: ", outputs)
-        input("Press any key to continue...")
+        #input("Press any key to continue...")
     return outputs
 
 def load_image(path):
@@ -243,6 +278,8 @@ def main():
         val_dataset = PoseEstimationDataset(val_image_arrays, val_ground_truths, image_descriptor)
 
         model = MLP(descriptor_shape)
+        #model = MLP(descriptor_shape, image_descriptor)
+
 
         model.model.summary()
 
