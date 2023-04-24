@@ -37,7 +37,7 @@ def train_step(vision_model, mlp_model, optimizer, images, poses):
 
 
 def validation_step(vision_model, mlp_model, images, poses):
-    vision_description = vision_model(images, training=True)
+    vision_description = vision_model(images, training=False)
     loss = compute_loss(mlp_model, vision_description, poses, training=False)
 
     return loss
@@ -257,6 +257,7 @@ for epoch in range(epochs):
 
     validations_set=random.sample(vali_data, 50)
 
+
     batches = [validations_set[x:x + batch_size] for x in range(0, len(validations_set), batch_size)]
 
     validation_loses=[]
@@ -287,4 +288,5 @@ for epoch in range(epochs):
 
 
     validation_loss=np.mean(np.array(validation_loses))
+    print("Validation loss: ", validation_loss)
     validation_loss_list.append(validation_loss)
