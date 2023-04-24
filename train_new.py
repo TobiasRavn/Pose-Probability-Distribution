@@ -36,8 +36,16 @@ def train_step(vision_model, mlp_model, optimizer, images, gts):
 #tf.config.set_visible_devices([], 'GPU')
 
 #gather all files names
-dir = "blenderproc/data"
+dir = "blenderproc/data_500_first"
 files=glob.glob(dir+"/*.hdf5")
+
+random.shuffle(files)
+#split files into training and validation data
+train_data = files[:int(len(files)*0.8)]
+vali_data = files[int(len(files)*0.8):]
+
+
+
 #load first image to use img size
 image, ground_truth = load_image(files[0])
 img=np.array(image)
@@ -80,7 +88,8 @@ loss_list = []
 epochs=10
 batch_size=4 
 #split files into batches of 10
-batches = [files[x:x+batch_size] for x in range(0, len(files), batch_size)]
+#batches = [files[x:x+batch_size] for x in range(0, len(files), batch_size)]
+batches = [train_data[x:x+batch_size] for x in range(0, len(train_data), batch_size)]
 for epoch in range(epochs):
     for count, batch in enumerate(batches):
         #dont use batch size here because the last one might be smaller
@@ -117,3 +126,7 @@ for epoch in range(epochs):
         ax.plot(loss_list)
         fig.canvas.draw()
         fig.canvas.flush_events()
+        
+        
+
+fig.savefig("loss_fin_400_test.png")
