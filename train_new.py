@@ -37,7 +37,7 @@ def train_step(vision_model, mlp_model, optimizer, images, poses):
 
 
 def validation_step(vision_model, mlp_model, images, poses):
-    vision_description = vision_model(images, training=False)
+    vision_description = vision_model(images, training=True)
     loss = compute_loss(mlp_model, vision_description, poses, training=False)
 
     return loss
@@ -57,7 +57,7 @@ def generate_pdf(vision_model, mlp_model, images, poses):
 
 def plotHeatmap(poses, predictions, ground_truth):
     # Construct covariance matrix
-
+    plt.clf()
     predictions=np.squeeze(predictions)
     predictions=predictions/np.max(predictions)
 
@@ -74,14 +74,16 @@ def plotHeatmap(poses, predictions, ground_truth):
         y_pred=pose[1]
         r_pred=math.atan2(pose[3],pose[2])
         #print(predictions[i])
-        ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=10, color="red",alpha=predictions[i]-0.1)  # , label='PP')
+        ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=2, color="red",alpha=np.clip(predictions[i]-0.1,0,1))  # , label='PP')
 
-        # Add ground truth as a blue dot
-        gt_x = float(ground_truth["x"])
-        gt_y = float(ground_truth["y"])
-        gt_z = float(ground_truth["r"])
-        gt_z=math.radians(gt_z)
-        ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")  # , label='GT')
+    # Add ground truth as a blue dot
+    gt_x = float(ground_truth["x"])
+    gt_y = float(ground_truth["y"])
+    gt_z = float(ground_truth["r"])
+    gt_z=math.radians(gt_z)
+    if gt_z>math.pi:
+        gt_z=gt_z-2*math.pi
+    ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")  # , label='GT')
 
     # Set axis labels and titles
     ax.set_xlabel("X-coor")
@@ -116,7 +118,7 @@ def plotHeatmap(poses, predictions, ground_truth):
 dir = "blenderproc/data_500_first"
 
 
-dir = "blenderproc/data"
+#dir = "blenderproc/data"
 files=glob.glob(dir+"/*.hdf5")
 
 random.shuffle(files)
@@ -278,7 +280,7 @@ for epoch in range(epochs):
 
         # time to train_step
         st = time.time()
-        loss = validation_step(descriptor.vision_model, mlp_model, optimizer, images, ground_truths)
+        loss = validation_step(descriptor.vision_model, mlp_model, images, ground_truths)
         print("loss: ", loss.numpy(), " time: ", time.time() - st)
         validation_loses.append(loss)
 
