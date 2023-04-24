@@ -3,12 +3,14 @@ import numpy as np
 import h5py
 import ast
 import glob
+import sys
 
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.utils import to_categorical
 from keras.models import load_model
+import sklearn as sk  
 
 from keras.models import Sequential
 from keras.layers import Dense, Flatten
@@ -17,6 +19,10 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
+
+import scipy as sp  
+import tensorflow as tf  
+import platform 
 
 tf_keras_layers = tf.keras.layers
 
@@ -172,7 +178,7 @@ def plotHeatmap(predictions, ground_truths):
     # Create a unique filename for the plot
     filename = f"heatmap_{len(ground_truths)}.png"
     # Save the plot as a PNG image in the 'plots' folder
-    plt.savefig(f'/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/{filename}')
+    plt.savefig(f'/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/Implicit-PDF/ERH_Test/plot/{filename}')
     plt.close(fig)
 
     return average_distance
@@ -285,124 +291,144 @@ def load_image(path):
     return image, ground_truth
 
 def main():
-    dir = "/home/reventlov/RobCand/2. Semester/Project_AR/IPDF/data"
-    files = glob.glob(dir + "/*.hdf5")
+    
+    print(f"Python Platform: {platform.platform()}")  
+    # print(f"Tensor Flow Version: {tf.__version__}")  
+    # print()  
+    # print(f"Python {sys.version}")  
+    # print(f"Scikit-Learn {sk.__version__}")  
+    # print(f"SciPy {sp.__version__}")  
+    gpu = len(tf.config.list_physical_devices('GPU'))>0
+    print("GPU is", "available" if gpu else "NOT AVAILABLE")
+   
+    device = "/gpu:0" if tf.config.list_physical_devices('GPU') else "/cpu:0"
+    
+    # Print the selected device
+    print(f"Running on {device}")
 
-    image_arrays = []
-    ground_truths = []
+    # Rest of your code inside the context manager
+    #with tf.device(device):
+    #with tf.device('/GPU:0'):  
+    with tf.device('/device:GPU:0'):
+        # Your original main function code goes here
+        dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/data"
+        files = glob.glob(dir + "/*.hdf5")
+        image_arrays = []
+        ground_truths = []
+        
+        
+        for i in range(0, len(files), 20): # only load every 40 number of file
+            file = files[i]
+            image, ground_truth = load_image(file)
+            image_arrays.append(image)
+            ground_truths.append(ground_truth)
 
-    for i in range(0, len(files), 5): # only load every 40 number of file
-        file = files[i]
-        image, ground_truth = load_image(file)
-        image_arrays.append(image)
-        ground_truths.append(ground_truth)
+        image_arrays = np.array(image_arrays)
+        ground_truths = np.array(ground_truths)
 
-    image_arrays = np.array(image_arrays)
-    ground_truths = np.array(ground_truths)
+        # Split the dataset into training and validation sets
+        train_image_arrays, val_image_arrays, train_ground_truths, val_ground_truths = train_test_split(image_arrays, ground_truths, test_size=0.1, random_state=42)
 
-    # Split the dataset into training and validation sets
-    train_image_arrays, val_image_arrays, train_ground_truths, val_ground_truths = train_test_split(image_arrays, ground_truths, test_size=0.1, random_state=42)
+        image_descriptor = Descriptor(image_size=(1000, 1000, 3))
 
-    image_descriptor = Descriptor(image_size=(1000, 1000, 3))
+        print(f"Number of training images: {len(train_image_arrays)}")
+        print(f"Number of validation images: {len(val_image_arrays)}")
 
-    print(f"Number of training images: {len(train_image_arrays)}")
-    print(f"Number of validation images: {len(val_image_arrays)}")
+        input("Press any key to continue...")
 
-    input("Press any key to continue...")
+        descriptor_shape = (1, image_descriptor.get_length_of_visual_description())
 
-    descriptor_shape = (1, image_descriptor.get_length_of_visual_description())
+        # Prepare the dataset
+        train_dataset = PoseEstimationDataset(train_image_arrays, train_ground_truths, image_descriptor)    
+        val_dataset = PoseEstimationDataset(val_image_arrays, val_ground_truths, image_descriptor)
 
-    # Prepare the dataset
-    train_dataset = PoseEstimationDataset(train_image_arrays, train_ground_truths, image_descriptor)    
-    val_dataset = PoseEstimationDataset(val_image_arrays, val_ground_truths, image_descriptor)
+        model = MLP(descriptor_shape)
 
-    model = MLP(descriptor_shape)
+        model.model.summary()
 
-    model.model.summary()
+        # Print the descriptor shape
+        print("Descriptor shape:", descriptor_shape)
 
-    # Print the descriptor shape
-    print("Descriptor shape:", descriptor_shape)
+        num_epochs = 5
+        # Initialize a list to store the average loss for each epoch
+        losses = []
+        for epoch in range(num_epochs):
+            history = model.model.fit(train_dataset, epochs=1, validation_data=val_dataset)
 
+            # Collect the training loss for the current epoch
+            loss = history.history['loss'][0]
+            losses.append(loss)
+            print(f"Epoch: {epoch+1}, Loss: {loss:.4f}")
 
-    num_epochs = 15
-    # Initialize a list to store the average loss for each epoch
-    losses = []
+        # Save the model
+        model.model.save("pose_estimation_model.h5")
 
-    for epoch in range(num_epochs):
-        history = model.model.fit(train_dataset, epochs=1, validation_data=val_dataset)
+        # Load the saved model
+        #saved_model = load_model("pose_estimation_model.h5")
 
-        # Collect the training loss for the current epoch
-        loss = history.history['loss'][0]
-        losses.append(loss)
-        print(f"Epoch: {epoch+1}, Loss: {loss:.4f}")
+        # Print the summary of the loaded model
+        #saved_model.summary()
+        # Access the model's layers
+        # layers = saved_model.layers
 
-    # Save the model
-    model.model.save("pose_estimation_model.h5")
-
-    # Load the saved model
-    #saved_model = load_model("pose_estimation_model.h5")
-
-    # Print the summary of the loaded model
-    #saved_model.summary()
-    # Access the model's layers
-    # layers = saved_model.layers
-
-    # # Print the layers' names and their corresponding weights
-    # for layer in layers:
-    #     print(f"Layer name: {layer.name}")
-    #     print(f"Weights: {layer.get_weights()}")
+        # # Print the layers' names and their corresponding weights
+        # for layer in layers:
+        #     print(f"Layer name: {layer.name}")
+        #     print(f"Weights: {layer.get_weights()}")
 
 
-    predictions = predict_poses(model, val_image_arrays, image_descriptor)
+        predictions = predict_poses(model, val_image_arrays, image_descriptor)
 
-    # Predict the poses for validation images
-    predictions = [(x[0], x[1],  x[2]) for x in predictions]
+        # Predict the poses for validation images
+        predictions = [(x[0], x[1],  x[2]) for x in predictions]
 
-     # Initialize a list to store the average distances
-    average_distances = []
-    # Load different numbers of data points and plot the heatmaps
-    num_data_points_range = range(20, len(image_arrays) + 1, 20)
-    for num_data_points in num_data_points_range:
-        # Select a subset of data points
-        subset_image_arrays = image_arrays[:num_data_points]
-        subset_ground_truths = ground_truths[:num_data_points]
+        # Initialize a list to store the average distances
+        average_distances = []
+        # Load different numbers of data points and plot the heatmaps
+        num_data_points_range = range(20, len(image_arrays) + 1, 20)
+        for num_data_points in num_data_points_range:
+            # Select a subset of data points
+            subset_image_arrays = image_arrays[:num_data_points]
+            subset_ground_truths = ground_truths[:num_data_points]
 
-        # Predict the poses for the subset of images
-        predictions = predict_poses(model, subset_image_arrays, image_descriptor)
-        predictions = [(x[0], x[1], x[2]) for x in predictions]
 
-        # Plot heatmap with predicted and ground truth coordinates and calculate the average distance
-        average_distance = plotHeatmap(predictions, subset_ground_truths.tolist())
-        average_distances.append(average_distance)
+            # Predict the poses for the subset of images
+            predictions = predict_poses(model, subset_image_arrays, image_descriptor)
+            predictions = [(x[0], x[1], x[2]) for x in predictions]
 
-    # Plot the relationship between the number of data points and the average distance
-    plt.plot(num_data_points_range, average_distances, marker='o', linestyle='-', markersize=6)
-    plt.xlabel('Number of Data Points')
-    plt.ylabel('Average Distance')
-    plt.title('Average Distance vs. Number of Data Points')
+            # Plot heatmap with predicted and ground truth coordinates and calculate the average distance
+            average_distance = plotHeatmap(predictions, subset_ground_truths.tolist())
+            average_distances.append(average_distance)
 
-    # Save the plot as a PNG image in the 'plots' folder
-    filename1 = f"average_distance_vs_num_data_points.png"
-    plt.savefig(f'/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/{filename1}')
-    plt.close()
+        # Plot the relationship between the number of data points and the average distance
+        plt.plot(num_data_points_range, average_distances, marker='o', linestyle='-', markersize=6)
+        plt.xlabel('Number of Data Points')
+        plt.ylabel('Average Distance')
+        plt.title('Average Distance vs. Number of Data Points')
 
-    # Create a list of epoch numbers
-    epochs = list(range(1, len(losses) + 1))
+        # Save the plot as a PNG image in the 'plots' folder
+        filename1 = f"average_distance_vs_num_data_points.png"
+        plt.savefig(f'/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/Implicit-PDF/ERH_Test/plot/{filename1}')
+        plt.close()
 
-    # Create the MSE-loss plot
-    plt.plot(epochs, losses, marker='o', linestyle='-', markersize=6)
-    plt.xlabel('Epochs')
-    plt.ylabel('MSE Loss')
-    plt.title('Loss vs. Epochs')
+        # Create a list of epoch numbers
+        epochs = list(range(1, len(losses) + 1))
 
-    # Save the plot as a PNG image in the 'plots' folder
-    #plt.savefig('/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/mse_loss.png')
-    # Create a unique filename for the plot
-    filename2 = f"mse_Epoc{num_epochs}_Loss{len(train_image_arrays) + len(val_image_arrays)}.png"
+        # Create the MSE-loss plot
+        plt.plot(epochs, losses, marker='o', linestyle='-', markersize=6)
+        plt.xlabel('Epochs')
+        plt.ylabel('MSE Loss')
+        plt.title('Loss vs. Epochs')
 
-    # Save the plot as a PNG image in the 'plots' folder
-    plt.savefig(f'/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/{filename2}')
-    plt.close()
+        # Save the plot as a PNG image in the 'plots' folder
+        #plt.savefig('/home/reventlov/RobCand/2. Semester/Project_AR/Implicit-PDF/ERH_Test/plot/mse_loss.png')
+        # Create a unique filename for the plot
+        filename2 = f"mse_Epoc{num_epochs}_Loss{len(train_image_arrays) + len(val_image_arrays)}.png"
+
+        # Save the plot as a PNG image in the 'plots' folder
+        plt.savefig(f'/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/Implicit-PDF/ERH_Test/plot/{filename2}')
+        plt.close()
+
 
 
 if __name__ == "__main__":
