@@ -4,6 +4,8 @@ import numpy as np
 import sys
 import os
 
+import h5py
+
 
 #take input argument and save as int
 if len(sys.argv) > 1:
@@ -73,7 +75,7 @@ for i in range(0, pictures):
     data = bproc.renderer.render()
     ground_truth = [{"x": str(x), "y": str(y), "r": str(r)}]
     data["ground_truth"] = ground_truth
-    bproc.writer.write_hdf5("blenderproc/Newdata/", data,append_to_existing_output=True)
+    bproc.writer.write_hdf5("blenderproc/dataN/", data,append_to_existing_output=True)
     print("Rendered pose: " + str(poses))
     poses += 1
 
