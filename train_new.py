@@ -1,5 +1,6 @@
 import random
 
+import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 import glob
@@ -36,10 +37,77 @@ def train_step(vision_model, mlp_model, optimizer, images, poses):
 
 
 def validation_step(vision_model, mlp_model, images, poses):
-    vision_description = vision_model(images, training=False)
+    vision_description = vision_model(images, training=True)
     loss = compute_loss(mlp_model, vision_description, poses, training=False)
 
     return loss
+
+def generate_pdf(vision_model, mlp_model, images, poses):
+
+
+    vision_description = vision_model(images, training=True)
+
+    logits = mlp_model([vision_description, poses],
+                       training=False)[Ellipsis, 0]
+
+    logits_norm = tf.nn.softmax(logits, axis=-1)
+
+    return logits_norm
+
+
+def plotHeatmap(poses, predictions, ground_truth):
+    # Construct covariance matrix
+
+    predictions=np.squeeze(predictions)
+    predictions=predictions/np.max(predictions)
+
+    print("Predictions:", predictions)
+    print("Ground Truths:", ground_truth)
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection='3d')
+    print(np.shape(predictions))
+    for i in range(np.size(predictions)):
+
+        pose=poses[i]
+
+        x_pred=pose[0]
+        y_pred=pose[1]
+        r_pred=math.atan2(pose[3],pose[2])
+        #print(predictions[i])
+        ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=10, color="red",alpha=predictions[i]-0.1)  # , label='PP')
+
+        # Add ground truth as a blue dot
+        gt_x = float(ground_truth["x"])
+        gt_y = float(ground_truth["y"])
+        gt_z = float(ground_truth["r"])
+        gt_z=math.radians(gt_z)
+        ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")  # , label='GT')
+
+    # Set axis labels and titles
+    ax.set_xlabel("X-coor")
+    ax.set_ylabel("Y-coor")
+    ax.set_zlabel("Z-coor")
+    ax.set_title("Predicted and Ground Truth Poses", fontsize=20)
+    ax.legend()
+
+    # Calculate the average distance between predicted poses and ground truth poses
+    #distances = []
+    #for i, (x_pred, y_pred, r_pred) in enumerate(predictions):
+    #    gt_x, gt_y, gt_z = map(float, ground_truths[i])
+    #    distance = np.sqrt((x_pred - gt_x) ** 2 + (y_pred - gt_y) ** 2 + (r_pred - gt_z) ** 2)
+    #    distances.append(distance)
+
+    #average_distance = np.mean(distances)
+    print("Done Plotting")
+    # Create a unique filename for the plot
+    filename = f"heatmap_{len(ground_truth)}.png"
+    # Save the plot as a PNG image in the 'plots' folder
+    plt.show()
+    #plt.savefig(
+    #    f'/{filename}')
+    #plt.close(fig)
+
+    #return average_distance
 
 # Hide GPU from visible devices
 #tf.config.set_visible_devices([], 'GPU')
@@ -101,7 +169,28 @@ epochs=10
 batch_size=4 
 #split files into batches of 10
 
+def get_all_poses(step_x, step_y, step_r):
+    x_num = round((x_max - x_min + step_x) / step_x)
+    y_num = round((y_max - y_min + step_y) / step_y)
+    r_num = round((360) / step_r)
+    x_range = np.linspace(x_min, x_max, int(x_num))
+    y_range = np.linspace(y_min, x_max, int(y_num))
+    r_range = np.linspace(0, 360 - step_r, int(r_num))
 
+    size = x_num * y_num * r_num
+    allPoses = np.zeros([size, 4])
+    count=0
+
+    for x in x_range:
+        for y in y_range:
+            for r in r_range:
+                r_rad = math.radians(r)
+
+                allPoses[count] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
+                count += 1
+
+
+    return allPoses
 def get_random_poses_plus_correct(position_samples, ground_truth):
     poses = np.zeros((position_samples, 4))
 
@@ -122,6 +211,18 @@ def get_random_poses_plus_correct(position_samples, ground_truth):
 #batches = [files[x:x+batch_size] for x in range(0, len(files), batch_size)]
 
 for epoch in range(epochs):
+
+    file = random.sample(vali_data, 1)
+
+    image, ground_truth = load_image(file[0])
+    images=[image]
+    images = tf.convert_to_tensor(images)
+    all_poses = get_all_poses(0.05, 0.05, 10)
+    predictions = generate_pdf(descriptor.vision_model, mlp_model, images, all_poses)
+    plotHeatmap(all_poses, predictions, ground_truth)
+
+
+
     random.shuffle(train_data)
     batches = [train_data[x:x + batch_size] for x in range(0, len(train_data), batch_size)]
     for count, batch in enumerate(batches):
@@ -179,6 +280,11 @@ for epoch in range(epochs):
         loss = validation_step(descriptor.vision_model, mlp_model, optimizer, images, ground_truths)
         print("loss: ", loss.numpy(), " time: ", time.time() - st)
         validation_loses.append(loss)
+
+
+
+
+
 
     validation_loss=np.mean(np.array(validation_loses))
     validation_loss_list.append(validation_loss)
