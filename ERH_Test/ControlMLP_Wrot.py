@@ -72,7 +72,7 @@ class Descriptor:
         self.vision_model = tf.keras.Model(self.input_image_size, layers_added)
 
 class PoseEstimationDataset(keras.utils.Sequence):
-    def __init__(self, images, ground_truths, image_descriptor, batch_size=4, shuffle=True):
+    def __init__(self, images, ground_truths, image_descriptor, batch_size=2, shuffle=True):
         self.images = images
         self.ground_truths = ground_truths
         self.image_descriptor = image_descriptor
@@ -132,13 +132,13 @@ class MLP:
         ])
 
         self.descriptor_shape = descriptor_shape
-        self.lr_schedule = 1e-6
+        #self.lr_schedule = 1e-7
 
         # Learning rate scheduling
-        # self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-        #     initial_learning_rate=1e-7, # Set your desired initial learning rate
-        #     decay_steps=10000,
-        #     decay_rate=0.9)
+        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=1e-7, # Set your desired initial learning rate
+            decay_steps=10000,
+            decay_rate=0.9)
 
         # Define optimizer and loss function
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
@@ -311,13 +311,13 @@ def main():
     #with tf.device('/GPU:0'):  
     with tf.device('/device:GPU:0'):
         # Your original main function code goes here
-        dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/data"
+        dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/data1000"
         files = glob.glob(dir + "/*.hdf5")
         image_arrays = []
         ground_truths = []
         
         
-        for i in range(0, len(files), 20): # only load every 40 number of file
+        for i in range(0, len(files), 2): # only load every 40 number of file
             file = files[i]
             image, ground_truth = load_image(file)
             image_arrays.append(image)
@@ -349,7 +349,7 @@ def main():
         # Print the descriptor shape
         print("Descriptor shape:", descriptor_shape)
 
-        num_epochs = 5
+        num_epochs = 10
         # Initialize a list to store the average loss for each epoch
         losses = []
         for epoch in range(num_epochs):
