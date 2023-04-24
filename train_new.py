@@ -1,3 +1,5 @@
+import random
+
 import tensorflow as tf
 from tensorflow import keras
 import glob
@@ -10,20 +12,20 @@ from lib.Pose_Accumulator import *
 from lib.Descriptor import *
 
 @tf.function
-def compute_loss(mlp_model, vision_description, gt, training=True):
-    logits = mlp_model([vision_description, gt],
+def compute_loss(mlp_model, vision_description, poses, training=True):
+    logits = mlp_model([vision_description, poses],
                                  training=training)[Ellipsis, 0]
 
     logits_norm = tf.nn.softmax(logits, axis=-1)
     #                                                            area              samples
-    loss_value = -tf.reduce_mean(tf.math.log(logits_norm[:, -1]/(((0.6**2)*3.1415*2)/gt.shape[1]))) #index -1 because last one is the correct pose
+    loss_value = -tf.reduce_mean(tf.math.log(logits_norm[:, -1]/(((0.6**2)*3.1415*2)/poses.shape[1]))) #index -1 because last one is the correct pose
     return loss_value
 
 @tf.function
-def train_step(vision_model, mlp_model, optimizer, images, gts):
+def train_step(vision_model, mlp_model, optimizer, images, poses):
     with tf.GradientTape() as tape:
         vision_description = vision_model(images, training=True)
-        loss = compute_loss(mlp_model, vision_description, gts)
+        loss = compute_loss(mlp_model, vision_description, poses)
     grads = tape.gradient(
         loss,
         vision_model.trainable_variables + mlp_model.trainable_variables)
@@ -33,9 +35,9 @@ def train_step(vision_model, mlp_model, optimizer, images, gts):
     return loss
 
 
-def validation_step(vision_model, mlp_model, optimizer, images, gts):
+def validation_step(vision_model, mlp_model, images, poses):
     vision_description = vision_model(images, training=False)
-    loss = compute_loss(mlp_model, vision_description, gts, training=False)
+    loss = compute_loss(mlp_model, vision_description, poses, training=False)
 
     return loss
 
@@ -101,7 +103,7 @@ batch_size=4
 
 
 def get_random_poses_plus_correct(position_samples, ground_truth):
-    poses = np.zeros(position_samples, 4)
+    poses = np.zeros((position_samples, 4))
 
     x = ground_truth["x"]
     y = ground_truth["y"]
@@ -118,8 +120,10 @@ def get_random_poses_plus_correct(position_samples, ground_truth):
     return poses
 
 #batches = [files[x:x+batch_size] for x in range(0, len(files), batch_size)]
-batches = [train_data[x:x+batch_size] for x in range(0, len(train_data), batch_size)]
+
 for epoch in range(epochs):
+    random.shuffle(train_data)
+    batches = [train_data[x:x + batch_size] for x in range(0, len(train_data), batch_size)]
     for count, batch in enumerate(batches):
         #dont use batch size here because the last one might be smaller
         #init images 
@@ -150,9 +154,12 @@ for epoch in range(epochs):
 
     #Validation
 
-    validations_set=random.sample(validations_set, 100)
+    validations_set=random.sample(vali_data, 50)
 
     batches = [validations_set[x:x + batch_size] for x in range(0, len(validations_set), batch_size)]
+
+    validation_loses=[]
+
     for count, batch in enumerate(batches):
         images = np.zeros((len(batch), imgSize[0], imgSize[1], imgSize[2]))
         # init ground truth
@@ -169,6 +176,9 @@ for epoch in range(epochs):
 
         # time to train_step
         st = time.time()
-        loss = train_step(descriptor.vision_model, mlp_model, optimizer, images, ground_truths)
+        loss = validation_step(descriptor.vision_model, mlp_model, optimizer, images, ground_truths)
         print("loss: ", loss.numpy(), " time: ", time.time() - st)
-    validation_loss_list.append(loss)
+        validation_loses.append(loss)
+
+    validation_loss=np.mean(np.array(validation_loses))
+    validation_loss_list.append(validation_loss)
