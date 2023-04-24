@@ -10,9 +10,9 @@ from lib.Pose_Accumulator import *
 from lib.Descriptor import *
 
 @tf.function
-def compute_loss(mlp_model, vision_description, gt):
+def compute_loss(mlp_model, vision_description, gt, training=True):
     logits = mlp_model([vision_description, gt],
-                                 training=True)[Ellipsis, 0]
+                                 training=training)[Ellipsis, 0]
 
     logits_norm = tf.nn.softmax(logits, axis=-1)
     #                                                            area              samples
@@ -32,20 +32,22 @@ def train_step(vision_model, mlp_model, optimizer, images, gts):
             mlp_model.trainable_variables))
     return loss
 
+
+def validation_step(vision_model, mlp_model, optimizer, images, gts):
+    vision_description = vision_model(images, training=False)
+    loss = compute_loss(mlp_model, vision_description, gts, training=False)
+
+    return loss
+
 # Hide GPU from visible devices
 #tf.config.set_visible_devices([], 'GPU')
 
 #gather all files names
 dir = "blenderproc/data_500_first"
+
+
+dir = "blenderproc/data"
 files=glob.glob(dir+"/*.hdf5")
-
-random.shuffle(files)
-#split files into training and validation data
-train_data = files[:int(len(files)*0.8)]
-vali_data = files[int(len(files)*0.8):]
-
-
-
 #load first image to use img size
 image, ground_truth = load_image(files[0])
 img=np.array(image)
@@ -85,9 +87,29 @@ r_min, r_max = 0, 360
 
 position_samples = 100
 loss_list = []
+validation_loss_list=[]
 epochs=10
 batch_size=4 
 #split files into batches of 10
+
+
+def get_random_poses_plus_correct(position_samples, ground_truth):
+    poses = np.zeros(position_samples, 4)
+
+    x = ground_truth["x"]
+    y = ground_truth["y"]
+    r = ground_truth["r"]
+    x, y, r = float(x), float(y), float(r)
+    r_rad = math.radians(r)
+    poses[-1] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
+    for j in range(position_samples - 1):
+        x = random.uniform(x_min, x_max)
+        y = random.uniform(y_min, y_max)
+        r = random.uniform(r_min, r_max)
+        r_rad = math.radians(r)
+        poses[j] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
+    return poses
+
 #batches = [files[x:x+batch_size] for x in range(0, len(files), batch_size)]
 batches = [train_data[x:x+batch_size] for x in range(0, len(train_data), batch_size)]
 for epoch in range(epochs):
@@ -100,18 +122,8 @@ for epoch in range(epochs):
         for i, file in enumerate(batch):
             image, ground_truth = load_image(file)
             images[i] = image
-            x=ground_truth["x"]
-            y=ground_truth["y"]
-            r=ground_truth["r"]
-            x , y, r = float(x), float(y), float(r)
-            r_rad = math.radians(r)
-            ground_truths[i,-1] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
-            for j in range(position_samples-1):
-                    x = random.uniform(x_min, x_max)
-                    y = random.uniform(y_min, y_max)
-                    r = random.uniform(r_min,r_max)
-                    r_rad = math.radians(r)
-                    ground_truths[i,j] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
+
+            ground_truths[i]=get_random_poses_plus_correct(position_samples,ground_truth)
         
         #convert numpy arrays to tensors
         images = tf.convert_to_tensor(images)
@@ -126,7 +138,30 @@ for epoch in range(epochs):
         ax.plot(loss_list)
         fig.canvas.draw()
         fig.canvas.flush_events()
-        
-        
 
-fig.savefig("loss_fin_400_test.png")
+
+
+    #Validation
+
+    validations_set=random.sample(images, 100)
+
+    batches = [validations_set[x:x + batch_size] for x in range(0, len(validations_set), batch_size)]
+    for count, batch in enumerate(batches):
+        images = np.zeros((len(batch), imgSize[0], imgSize[1], imgSize[2]))
+        # init ground truth
+        ground_truths = np.zeros((len(batch), position_samples, 4))
+        for i, file in enumerate(batch):
+            image, ground_truth = load_image(file)
+            images[i] = image
+
+            ground_truths[i] = get_random_poses_plus_correct(position_samples,ground_truth)
+
+        # convert numpy arrays to tensors
+        images = tf.convert_to_tensor(images)
+        ground_truths = tf.convert_to_tensor(ground_truths)
+
+        # time to train_step
+        st = time.time()
+        loss = train_step(descriptor.vision_model, mlp_model, optimizer, images, ground_truths)
+        print("loss: ", loss.numpy(), " time: ", time.time() - st)
+    validation_loss_list.append(loss)

@@ -188,6 +188,7 @@ def main(_):
     grads = tape.gradient(
         loss,
         vision_model.trainable_variables + model_head.trainable_variables)
+
     optimizer.apply_gradients(
         zip(grads, vision_model.trainable_variables +
             model_head.trainable_variables))
