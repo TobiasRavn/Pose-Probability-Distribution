@@ -34,9 +34,9 @@ def train_step(vision_model, mlp_model, optimizer, images, poses):
             mlp_model.trainable_variables))
     return loss
 
-
+@tf.function
 def validation_step(vision_model, mlp_model, images, poses):
-    vision_description = vision_model(images, training=False)
+    vision_description = vision_model(images , training=True)  #Need to be true to get a proper validation test
     loss = compute_loss(mlp_model, vision_description, poses, training=False)
 
     return loss
@@ -48,7 +48,7 @@ def validation_step(vision_model, mlp_model, images, poses):
 dir = "blenderproc/data_500_first"
 
 
-dir = "blenderproc/data"
+#dir = "blenderproc/data"
 files=glob.glob(dir+"/*.hdf5")
 
 random.shuffle(files)
@@ -155,6 +155,7 @@ for epoch in range(epochs):
     #Validation
 
     validations_set=random.sample(vali_data, 50)
+    
 
     batches = [validations_set[x:x + batch_size] for x in range(0, len(validations_set), batch_size)]
 
@@ -176,9 +177,10 @@ for epoch in range(epochs):
 
         # time to train_step
         st = time.time()
-        loss = validation_step(descriptor.vision_model, mlp_model, optimizer, images, ground_truths)
+        loss = validation_step(descriptor.vision_model, mlp_model, images, ground_truths)
         print("loss: ", loss.numpy(), " time: ", time.time() - st)
         validation_loses.append(loss)
 
     validation_loss=np.mean(np.array(validation_loses))
+    print("Validation loss: ", validation_loss)
     validation_loss_list.append(validation_loss)
