@@ -16,7 +16,7 @@ def compute_loss(mlp_model, vision_description, gt):
 
     logits_norm = tf.nn.softmax(logits, axis=-1)
     #                                                            area              samples
-    loss_value = -tf.reduce_mean(tf.math.log(logits_norm[:, -1]/((0.6**2)*3.1415)/gt.shape[1])) #index -1 because last one is the correct pose
+    loss_value = -tf.reduce_mean(tf.math.log(logits_norm[:, -1]/(((0.6**2)*3.1415*2)/gt.shape[1]))) #index -1 because last one is the correct pose
     return loss_value
 
 @tf.function
@@ -31,6 +31,9 @@ def train_step(vision_model, mlp_model, optimizer, images, gts):
         zip(grads, vision_model.trainable_variables +
             mlp_model.trainable_variables))
     return loss
+
+# Hide GPU from visible devices
+#tf.config.set_visible_devices([], 'GPU')
 
 #gather all files names
 dir = "blenderproc/data"
@@ -61,7 +64,6 @@ mlp_model = tf.keras.models.Model(
 
 #define optimizer
 optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-
 
 #init plot of loss using plt
 plt.ion()
