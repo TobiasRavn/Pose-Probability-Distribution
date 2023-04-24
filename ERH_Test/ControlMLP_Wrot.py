@@ -126,12 +126,13 @@ class MLP:
         ])
 
         self.descriptor_shape = descriptor_shape
+        self.lr_schedule = 1e-6
 
         # Learning rate scheduling
-        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-            initial_learning_rate=1e-5, # Set your desired initial learning rate
-            decay_steps=10000,
-            decay_rate=0.9)
+        # self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(
+        #     initial_learning_rate=1e-7, # Set your desired initial learning rate
+        #     decay_steps=10000,
+        #     decay_rate=0.9)
 
         # Define optimizer and loss function
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
@@ -230,7 +231,7 @@ def predict_poses(model, image_arrays, image_descriptor):
 
         # Use the image descriptor as input to the model
         output = model.model.predict(image_descriptor_array)
-
+        
         # Remove extra dimensions
         output = np.squeeze(output)
 
@@ -290,7 +291,7 @@ def main():
     image_arrays = []
     ground_truths = []
 
-    for i in range(0, len(files), 20): # only load every 40 number of file
+    for i in range(0, len(files), 5): # only load every 40 number of file
         file = files[i]
         image, ground_truth = load_image(file)
         image_arrays.append(image)
@@ -323,7 +324,7 @@ def main():
     print("Descriptor shape:", descriptor_shape)
 
 
-    num_epochs = 5
+    num_epochs = 15
     # Initialize a list to store the average loss for each epoch
     losses = []
 
@@ -360,7 +361,7 @@ def main():
      # Initialize a list to store the average distances
     average_distances = []
     # Load different numbers of data points and plot the heatmaps
-    num_data_points_range = range(10, len(image_arrays) + 1, 10)
+    num_data_points_range = range(20, len(image_arrays) + 1, 20)
     for num_data_points in num_data_points_range:
         # Select a subset of data points
         subset_image_arrays = image_arrays[:num_data_points]
