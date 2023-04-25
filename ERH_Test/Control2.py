@@ -23,7 +23,44 @@ import platform
 
 tf_keras_layers = tf.keras.layers
 
+# class Descriptor:
+#     def get_image_descriptor_array(self, image_data, image_depth = "RGB"):
+#         "This function will return a descriptor for the vision model. It takes a hdf5"
+#         _image = Image.fromarray(image_data,image_depth)
+#         _image = tf.keras.utils.img_to_array(_image)[:,:,:3]
+#         _image = np.expand_dims(_image , axis=0)
+#         return self.vision_model.predict(_image)
+    
+#     def show_base_model(self):
+#         "Shows the base model"
+#         self.base_descriptor_model.summary()
+    
+#     def show_vision_model(self):
+#         "Shows the vision model"
+#         self.vision_model.summary()
+        
+#     def get_length_of_visual_description(self):
+#         return self.length_of_visual_description
+    
+#     def __init__(self, image_size, model_weights = "imagenet"):
+#         self.base_descriptor_model = tf.keras.applications.ResNet50V2(weights=model_weights,
+#                                                include_top=False,               
+#                                                input_shape=image_size)
+        
+#         self.input_image_size = tf.keras.layers.Input(shape=image_size)
+#         layers_added = self.base_descriptor_model(self.input_image_size)
+#         layers_added = tf_keras_layers.GlobalAveragePooling2D()(layers_added)
+        
+#         self.length_of_visual_description = layers_added.shape[-1]
+#         self.vision_model = tf.keras.Model(self.input_image_size, layers_added)
 class Descriptor:
+    def get_image_descriptor_path(self, image_path):
+        "This function will return a descriptor for the vision model. It takes a image path"
+        _image = tf.keras.utils.load_img(image_path)
+        _image = tf.keras.utils.img_to_array(_image)[:,:,:3]
+        _image = np.expand_dims(_image , axis=0)
+        return self.vision_model.predict(_image)
+    
     def get_image_descriptor_array(self, image_data, image_depth = "RGB"):
         "This function will return a descriptor for the vision model. It takes a hdf5"
         _image = Image.fromarray(image_data,image_depth)
@@ -31,6 +68,12 @@ class Descriptor:
         _image = np.expand_dims(_image , axis=0)
         return self.vision_model.predict(_image)
     
+    def get_image_descriptor_PIL(self, image_data):
+        "This function will return a descriptor for the vision model. It takes a PIL image"
+        _image = tf.keras.utils.img_to_array(image_data)[:,:,:3]
+        _image = np.expand_dims(image_data , axis=0)
+        return self.vision_model.predict(_image)
+        
     def show_base_model(self):
         "Shows the base model"
         self.base_descriptor_model.summary()
@@ -106,26 +149,55 @@ class PoseEstimationDataset(keras.utils.Sequence):
 
         return X, y
 
+# class MLP:
+#     def __init__(self, descriptor_shape):
+#         self.model = Sequential([
+#             Dense(256, activation='relu', input_shape=descriptor_shape, name='dense_1'),  # Modify the input shape
+#             Dense(256, activation='relu', name='dense_2'),
+#             Dense(3, activation='softmax', name='predictions')
+#         ])
+
+#         self.descriptor_shape = descriptor_shape
+#         #self.lr_schedule = 1e-7
+
+#         # Learning rate scheduling
+#         self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(
+#             initial_learning_rate=1e-7, # Set your desired initial learning rate
+#             decay_steps=10000,
+#             decay_rate=0.9)
+
+#         # Define optimizer and loss function
+#         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
+#         self.model.compile(optimizer=self.optimizer, loss='mse')
+
 class MLP:
-    def __init__(self, descriptor_shape):
-        self.model = Sequential([
-            Dense(256, activation='relu', input_shape=descriptor_shape, name='dense_1'),  # Modify the input shape
-            Dense(256, activation='relu', name='dense_2'),
-            Dense(3, activation='softmax', name='predictions')
-        ])
+    def __init__(self, image_size):
+        self.image_size = image_size
+        self.descriptor = Descriptor(image_size)
+        descriptor_shape = (1, self.descriptor.get_length_of_visual_description())
 
-        self.descriptor_shape = descriptor_shape
-        #self.lr_schedule = 1e-7
+        # Define inputs
+        self.input_visual = tf.keras.layers.Input(shape=(self.descriptor.get_length_of_visual_description(),))
+        self.input_query = tf.keras.layers.Input(shape=(None, 3))
 
-        # Learning rate scheduling
-        self.lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-            initial_learning_rate=1e-7, # Set your desired initial learning rate
-            decay_steps=10000,
-            decay_rate=0.9)
+        # Define input processing
+        visual_embedding = tf.keras.layers.keras.layerskl.Dense(256)(self.input_visual)
+        query_embedding = tf.keras.layers.Dense(256)(self.input_query)
+        output = visual_embedding[:, tf.newaxis] + query_embedding
+        output = tf.keras.layers.ReLU()(output)
+        output = tf.keras.layers.Dense(256, 'relu')(output)
+        output = tf.keras.layers.Dense(1)(output)
 
-        # Define optimizer and loss function
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr_schedule)
+        # Define model
+        self.model = tf.keras.models.Model(inputs=[self.input_visual, self.input_query], outputs=output)
+
+        # Define optimizer
+        self.learning_rate = 1e-7
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
+
+        # Compile model
         self.model.compile(optimizer=self.optimizer, loss='mse')
+
 
 def plotHeatmap(predictions, ground_truths):
 
@@ -214,29 +286,6 @@ def generate_pdf(vision_model, mlp_model, images, poses):
 
     return logits_norm
 
-def get_all_poses(step_x, step_y, step_r):
-    x_num = round((x_max - x_min + step_x) / step_x)
-    y_num = round((y_max - y_min + step_y) / step_y)
-    r_num = round((360) / step_r)
-    x_range = np.linspace(x_min, x_max, int(x_num))
-    y_range = np.linspace(y_min, x_max, int(y_num))
-    r_range = np.linspace(0, 360 - step_r, int(r_num))
-
-    size = x_num * y_num * r_num
-    allPoses = np.zeros([size, 4])
-    count=0
-
-    for x in x_range:
-        for y in y_range:
-            for r in r_range:
-                r_rad = math.radians(r)
-
-                allPoses[count] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
-                count += 1
-
-
-    return allPoses
-
 def main():
     
     print(f"Python Platform: {platform.platform()}")  
@@ -268,7 +317,16 @@ def main():
         # Split the dataset into training and validation sets
         train_image_arrays, val_image_arrays, train_ground_truths, val_ground_truths = train_test_split(image_arrays, ground_truths, test_size=0.1, random_state=42)
 
-        image_descriptor = Descriptor(image_size=(1000, 1000, 3))
+        #image_descriptor = Descriptor(image_size=(1000, 1000, 3))
+        image_arrays = np.array(image_arrays)
+        imgSize = (image_arrays.shape[1], image_arrays.shape[2], image_arrays.shape[3])
+        image_descriptor = Descriptor(imgSize)
+
+        
+        #imgSize = image_arrays.shape
+        #init descriptor
+        #image_descriptor = Descriptor(imgSize)
+        print("image_descriptor: ", image_descriptor)
 
         print(f"Number of training images: {len(train_image_arrays)}")
         print(f"Number of validation images: {len(val_image_arrays)}")
@@ -281,8 +339,8 @@ def main():
         train_dataset = PoseEstimationDataset(train_image_arrays, train_ground_truths, image_descriptor)    
         val_dataset = PoseEstimationDataset(val_image_arrays, val_ground_truths, image_descriptor)
 
-        #model = MLP(descriptor_shape)
-        model = MLP(descriptor_shape, image_descriptor)
+        model = MLP(descriptor_shape)
+        #model = MLP(descriptor_shape, image_descriptor)
 
 
         model.model.summary()
@@ -301,8 +359,8 @@ def main():
             loss = history.history['loss'][0]
             losses.append(loss)
             print(f"Epoch: {epoch+1}, Loss: {loss:.4f}")
-            predictions = generate_pdf(descriptor.vision_model, mlp_model, images, all_poses)
-            plotHeatmap(all_poses, predictions, ground_truth)
+            # predictions = generate_pdf(image_descriptor, model, image_arrays, all_poses)
+            # plotHeatmap(all_poses, predictions, ground_truth)
 
     # Save the model
         model.model.save("pose_estimation_model.h5")
