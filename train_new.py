@@ -130,7 +130,7 @@ image, ground_truth = load_image(files[0])
 img=np.array(image)
 imgSize=img.shape
 #init descriptor
-descriptor=Descriptor(imgSize)
+descriptorw=Descriptor(imgSize)
 #init mlp model
 lenDiscriptors = 2048
 lenPose = 4
