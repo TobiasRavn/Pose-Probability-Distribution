@@ -18,7 +18,7 @@ def compute_loss(mlp_model, vision_description, poses, training=True):
                                  training=training)[Ellipsis, 0]
 
     logits_norm = tf.nn.softmax(logits, axis=-1)
-    #                                                            area              samples
+    #                                                            area/span             samples
     loss_value = -tf.reduce_mean(tf.math.log(logits_norm[:, -1]/(((0.6**2)*3.1415*2)/poses.shape[1]))) #index -1 because last one is the correct pose
     return loss_value
 
@@ -55,17 +55,19 @@ def generate_pdf(vision_model, mlp_model, images, poses):
     return logits_norm
 
 
-def plotHeatmap(poses, predictions, ground_truth):
+def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_counter):
     # Construct covariance matrix
-    plt.clf()
+    #plt.clf()
     predictions=np.squeeze(predictions)
     predictions=predictions/np.max(predictions)
 
-    print("Predictions:", predictions)
-    print("Ground Truths:", ground_truth)
-    fig = plt.figure(figsize=(8, 6))
-    ax = fig.add_subplot(111, projection='3d')
-    print(np.shape(predictions))
+    #print("Predictions:", predictions)
+    #print("Ground Truths:", ground_truth)
+    #Laver en ny figur vær gang
+    #heat_fig = plt.figure(figsize=(8, 6))
+    #heat_ax = heat_fig.add_subplot(111, projection='3d')
+    #print(np.shape(predictions))
+    heat_ax.clear()
     for i in range(np.size(predictions)):
 
         pose=poses[i]
@@ -74,7 +76,7 @@ def plotHeatmap(poses, predictions, ground_truth):
         y_pred=pose[1]
         r_pred=math.atan2(pose[3],pose[2])
         #print(predictions[i])
-        ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=2, color="red",alpha=np.clip(predictions[i]-0.1,0,1))  # , label='PP')
+        heat_ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=2, color="red",alpha=np.clip(predictions[i]-0.1,0,1))  # , label='PP')
 
     # Add ground truth as a blue dot
     gt_x = float(ground_truth["x"])
@@ -83,14 +85,14 @@ def plotHeatmap(poses, predictions, ground_truth):
     gt_z=math.radians(gt_z)
     if gt_z>math.pi:
         gt_z=gt_z-2*math.pi
-    ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")  # , label='GT')
+    heat_ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")  # , label='GT')
 
     # Set axis labels and titles
-    ax.set_xlabel("X-coor")
-    ax.set_ylabel("Y-coor")
-    ax.set_zlabel("Z-coor")
-    ax.set_title("Predicted and Ground Truth Poses", fontsize=20)
-    ax.legend()
+    heat_ax.set_xlabel("X-coor")
+    heat_ax.set_ylabel("Y-coor")
+    heat_ax.set_zlabel("Z-coor")
+    heat_ax.set_title("Predicted and Ground Truth Poses", fontsize=20)
+    heat_ax.legend()
 
     # Calculate the average distance between predicted poses and ground truth poses
     #distances = []
@@ -104,7 +106,9 @@ def plotHeatmap(poses, predictions, ground_truth):
     # Create a unique filename for the plot
     filename = f"heatmap_{len(ground_truth)}.png"
     # Save the plot as a PNG image in the 'plots' folder
-    plt.show()
+    #plt.show()
+    heat_fig.canvas.draw()
+    heat_fig.canvas.flush_events()
     #plt.savefig(
     #    f'/{filename}')
     #plt.close(fig)
@@ -116,9 +120,8 @@ def plotHeatmap(poses, predictions, ground_truth):
 
 #gather all files names
 dir = "blenderproc/data_500_first"
-
-
 #dir = "blenderproc/data"
+#dir = "blenderproc/data_1000"
 files=glob.glob(dir+"/*.hdf5")
 
 random.shuffle(files)
@@ -126,6 +129,8 @@ random.shuffle(files)
 train_data = files[:int(len(files)*0.8)]
 vali_data = files[int(len(files)*0.8):]
 
+#Set file name
+current_test_name = "batch_4_epoch_100_1e_4_500"
 
 #load first image to use img size
 image, ground_truth = load_image(files[0])
@@ -137,6 +142,9 @@ descriptor=Descriptor(imgSize)
 lenDiscriptors = 2048
 lenPose = 4
 learning_rate = 1e-4
+
+
+
 
 #define MLP from IPDF
 input_visual = tfkl.Input(shape=(lenDiscriptors,))
@@ -167,8 +175,8 @@ r_min, r_max = 0, 360
 position_samples = 100
 loss_list = []
 validation_loss_list=[]
-epochs=10
-batch_size=4 
+epochs=100
+batch_size=4
 #split files into batches of 10
 
 def get_all_poses(step_x, step_y, step_r):
@@ -212,16 +220,19 @@ def get_random_poses_plus_correct(position_samples, ground_truth):
 
 #batches = [files[x:x+batch_size] for x in range(0, len(files), batch_size)]
 
+epoch_counter = 0
+heat_fig = plt.figure(figsize=(8, 6))
+heat_ax = heat_fig.add_subplot(111, projection='3d')
 for epoch in range(epochs):
 
-    file = random.sample(vali_data, 1)
-
-    image, ground_truth = load_image(file[0])
-    images=[image]
-    images = tf.convert_to_tensor(images)
-    all_poses = get_all_poses(0.05, 0.05, 10)
-    predictions = generate_pdf(descriptor.vision_model, mlp_model, images, all_poses)
-    plotHeatmap(all_poses, predictions, ground_truth)
+#    file = random.sample(vali_data, 1)
+#
+#    image, ground_truth = load_image(file[0])
+#    images=[image]
+#    images = tf.convert_to_tensor(images)
+#    all_poses = get_all_poses(0.05, 0.05, 10)
+#    predictions = generate_pdf(descriptor.vision_model, mlp_model, images, all_poses)
+#    plotHeatmap(all_poses, predictions, ground_truth, heat_fig,heat_ax, epoch_counter)
 
 
 
@@ -281,14 +292,26 @@ for epoch in range(epochs):
         # time to train_step
         st = time.time()
         loss = validation_step(descriptor.vision_model, mlp_model, images, ground_truths)
-        print("loss: ", loss.numpy(), " time: ", time.time() - st)
+        #print("loss: ", loss.numpy(), " time: ", time.time() - st)
         validation_loses.append(loss)
+    
+    file = random.sample(vali_data, 1)
+
+    image, ground_truth = load_image(file[0])
+    images=[image]
+    images = tf.convert_to_tensor(images)
+    all_poses = get_all_poses(0.05, 0.05, 10)
+    predictions = generate_pdf(descriptor.vision_model, mlp_model, images, all_poses)
+    plotHeatmap(all_poses, predictions, ground_truth, heat_fig,heat_ax, epoch_counter)
 
 
 
-
-
-
+    #mlp_model.save("mlp_"+current_test_name+"_"+str(epoch_counter))
+    #descriptor.vision_model.save("vm_"+current_test_name+"_"+str(epoch_counter))
+    heat_fig.savefig("new_training_output/Heat_map_"+current_test_name+"_"+str(epoch_counter)+".png")
+    fig.savefig("new_training_output/loss_"+current_test_name+"_"+str(epoch_counter)+".png")
+    epoch_counter+=1
     validation_loss=np.mean(np.array(validation_loses))
     print("Validation loss: ", validation_loss)
     validation_loss_list.append(validation_loss)
+    
