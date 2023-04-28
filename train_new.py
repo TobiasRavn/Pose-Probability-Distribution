@@ -169,10 +169,16 @@ epochs=10
 batch_size=4 
 #split files into batches of 10
 
-def get_all_poses(step_x, step_y, step_r):
-    x_num = round((x_max - x_min + step_x) / step_x)
-    y_num = round((y_max - y_min + step_y) / step_y)
-    r_num = round((360) / step_r)
+def get_all_poses(x_num, y_num, r_num):
+
+    x_min=-1
+    x_max=1
+    y_min=-1
+    y_max=1
+
+    step_r=360/r_num
+
+
     x_range = np.linspace(x_min, x_max, int(x_num))
     y_range = np.linspace(y_min, x_max, int(y_num))
     r_range = np.linspace(0, 360 - step_r, int(r_num))
@@ -198,11 +204,16 @@ def get_random_poses_plus_correct(position_samples, ground_truth):
     y = ground_truth["y"]
     r = ground_truth["r"]
     x, y, r = float(x), float(y), float(r)
+
+    x=x/0.3
+    y=y/0.3
     r_rad = math.radians(r)
     poses[-1] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
+
+
     for j in range(position_samples - 1):
-        x = random.uniform(x_min, x_max)
-        y = random.uniform(y_min, y_max)
+        x = random.uniform(-1, 1)
+        y = random.uniform(-1, 1)
         r = random.uniform(r_min, r_max)
         r_rad = math.radians(r)
         poses[j] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
@@ -217,7 +228,7 @@ for epoch in range(epochs):
     image, ground_truth = load_image(file[0])
     images=[image]
     images = tf.convert_to_tensor(images)
-    all_poses = get_all_poses(0.05, 0.05, 10)
+    all_poses = get_all_poses(25, 25, 25)
     predictions = generate_pdf(descriptor.vision_model, mlp_model, images, all_poses)
     plotHeatmap(all_poses, predictions, ground_truth)
 
