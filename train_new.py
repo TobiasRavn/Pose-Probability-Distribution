@@ -12,6 +12,10 @@ from lib.load_image import *
 from lib.Pose_Accumulator import *
 from lib.Descriptor import *
 
+#start timer
+start_time = time.time()
+
+
 @tf.function
 def compute_loss(mlp_model, vision_description, poses, training=True):
     logits = mlp_model([vision_description, poses],
@@ -63,7 +67,6 @@ def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_count
 
     #print("Predictions:", predictions)
     #print("Ground Truths:", ground_truth)
-    #Laver en ny figur vær gang
     #heat_fig = plt.figure(figsize=(8, 6))
     #heat_ax = heat_fig.add_subplot(111, projection='3d')
     #print(np.shape(predictions))
@@ -121,6 +124,7 @@ def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_count
 #gather all files names
 dir = "blenderproc/data_500_first"
 #dir = "blenderproc/data"
+#dir = "blenderproc/data_triangle"
 #dir = "blenderproc/data_1000"
 files=glob.glob(dir+"/*.hdf5")
 
@@ -130,7 +134,7 @@ train_data = files[:int(len(files)*0.8)]
 vali_data = files[int(len(files)*0.8):]
 
 #Set file name
-current_test_name = "batch_4_epoch_100_1e_4_500"
+current_test_name = "batch_4_epoch_100_1e_4_triangle"
 
 #load first image to use img size
 image, ground_truth = load_image(files[0])
@@ -168,6 +172,10 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 plt.show()
 
+
+fig_loss_epoch = plt.figure()
+ax_loss_epoch = fig_loss_epoch.add_subplot(111)
+
 x_min, x_max = -0.3, 0.3
 y_min, y_max = -0.3, 0.3
 r_min, r_max = 0, 360
@@ -175,7 +183,7 @@ r_min, r_max = 0, 360
 position_samples = 100
 loss_list = []
 validation_loss_list=[]
-epochs=100
+epochs = 100
 batch_size=4
 #split files into batches of 10
 
@@ -223,7 +231,13 @@ def get_random_poses_plus_correct(position_samples, ground_truth):
 epoch_counter = 0
 heat_fig = plt.figure(figsize=(8, 6))
 heat_ax = heat_fig.add_subplot(111, projection='3d')
+
+epoch_lose_list = []
 for epoch in range(epochs):
+
+
+    temp_epoch_loss = []
+
 
 #    file = random.sample(vali_data, 1)
 #
@@ -259,8 +273,12 @@ for epoch in range(epochs):
         loss = train_step(descriptor.vision_model, mlp_model, optimizer, images, ground_truths)
         print("loss: ", loss.numpy()," time: ", time.time()-st)
         loss_list.append(loss.numpy())
+        temp_epoch_loss.append(loss.numpy())
         ax.clear()
         ax.plot(loss_list)
+        ax.set_xlabel("Batch")
+        ax.set_ylabel("Loss")
+        ax.set_title("Loss per Batch", fontsize=20)
         fig.canvas.draw()
         fig.canvas.flush_events()
 
@@ -304,14 +322,29 @@ for epoch in range(epochs):
     predictions = generate_pdf(descriptor.vision_model, mlp_model, images, all_poses)
     plotHeatmap(all_poses, predictions, ground_truth, heat_fig,heat_ax, epoch_counter)
 
+    print("Epoch loss: ", np.mean(np.array(temp_epoch_loss)))
+    epoch_lose_list.append(np.mean(np.array(temp_epoch_loss)))
+    ax_loss_epoch.clear()
+    ax_loss_epoch.plot(epoch_lose_list)
+    ax_loss_epoch.plot(validation_loss_list,'bo')
+    ax_loss_epoch.set_xlabel("Epoch")
+    ax_loss_epoch.set_ylabel("Loss")
+    ax_loss_epoch.set_title("Loss over Epoch", fontsize=20)
+    fig_loss_epoch.canvas.draw()
+    fig_loss_epoch.canvas.flush_events()
 
-
-    #mlp_model.save("mlp_"+current_test_name+"_"+str(epoch_counter))
-    #descriptor.vision_model.save("vm_"+current_test_name+"_"+str(epoch_counter))
+    mlp_model.save("mlp_"+current_test_name+"_"+str(epoch_counter))
+    descriptor.vision_model.save("vm_"+current_test_name+"_"+str(epoch_counter))
     heat_fig.savefig("new_training_output/Heat_map_"+current_test_name+"_"+str(epoch_counter)+".png")
     fig.savefig("new_training_output/loss_"+current_test_name+"_"+str(epoch_counter)+".png")
     epoch_counter+=1
     validation_loss=np.mean(np.array(validation_loses))
     print("Validation loss: ", validation_loss)
     validation_loss_list.append(validation_loss)
-    
+    end_time = time.time()
+
+#When the trainign started as a date and time
+#print("Traning started at: ", start_time.strftime("%d/%m/%Y %H:%M:%S")," and ended at: ", end_time.strftime("%d/%m/%Y %H:%M:%S"))
+print("Training took: ", end_time-start_time, " seconds")
+
+
