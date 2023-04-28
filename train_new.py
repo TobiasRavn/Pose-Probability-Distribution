@@ -12,13 +12,17 @@ from lib.load_image import *
 from lib.Pose_Accumulator import *
 from lib.Descriptor import *
 
+#start timer
+start_time = time.time()
+
+
 @tf.function
 def compute_loss(mlp_model, vision_description, poses, training=True):
     logits = mlp_model([vision_description, poses],
                                  training=training)[Ellipsis, 0]
 
     logits_norm = tf.nn.softmax(logits, axis=-1)
-    #                                                            area              samples
+    #                                                            area/span             samples
     loss_value = -tf.reduce_mean(tf.math.log(logits_norm[:, -1]/(((0.6**2)*3.1415*2)/poses.shape[1]))) #index -1 because last one is the correct pose
     return loss_value
 
@@ -55,17 +59,19 @@ def generate_pdf(vision_model, mlp_model, images, poses):
     return logits_norm
 
 
-def plotHeatmap(poses, predictions, ground_truth):
+def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_counter):
     # Construct covariance matrix
 
+    #plt.clf()
     predictions=np.squeeze(predictions)
     predictions=predictions/np.max(predictions)
 
-    print("Predictions:", predictions)
-    print("Ground Truths:", ground_truth)
-    fig = plt.figure(figsize=(8, 6))
-    ax = fig.add_subplot(111, projection='3d')
-    print(np.shape(predictions))
+    #print("Predictions:", predictions)
+    #print("Ground Truths:", ground_truth)
+    #heat_fig = plt.figure(figsize=(8, 6))
+    #heat_ax = heat_fig.add_subplot(111, projection='3d')
+    #print(np.shape(predictions))
+    heat_ax.clear()
     for i in range(np.size(predictions)):
 
         pose=poses[i]
@@ -74,21 +80,25 @@ def plotHeatmap(poses, predictions, ground_truth):
         y_pred=pose[1]
         r_pred=math.atan2(pose[3],pose[2])
         #print(predictions[i])
-        ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=10, color="red",alpha=predictions[i]-0.1)  # , label='PP')
 
-        # Add ground truth as a blue dot
-        gt_x = float(ground_truth["x"])
-        gt_y = float(ground_truth["y"])
-        gt_z = float(ground_truth["r"])
-        gt_z=math.radians(gt_z)
-        ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")  # , label='GT')
+        heat_ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=2, color="red",alpha=np.clip(predictions[i]-0.1,0,1))  # , label='PP')
+
+    # Add ground truth as a blue dot
+    gt_x = float(ground_truth["x"])
+    gt_y = float(ground_truth["y"])
+    gt_z = float(ground_truth["r"])
+    gt_z=math.radians(gt_z)
+    if gt_z>math.pi:
+        gt_z=gt_z-2*math.pi
+    heat_ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")  # , label='GT')
+
 
     # Set axis labels and titles
-    ax.set_xlabel("X-coor")
-    ax.set_ylabel("Y-coor")
-    ax.set_zlabel("Z-coor")
-    ax.set_title("Predicted and Ground Truth Poses", fontsize=20)
-    ax.legend()
+    heat_ax.set_xlabel("X-coor")
+    heat_ax.set_ylabel("Y-coor")
+    heat_ax.set_zlabel("Z-coor")
+    heat_ax.set_title("Predicted and Ground Truth Poses", fontsize=20)
+    heat_ax.legend()
 
     # Calculate the average distance between predicted poses and ground truth poses
     #distances = []
@@ -102,7 +112,9 @@ def plotHeatmap(poses, predictions, ground_truth):
     # Create a unique filename for the plot
     filename = f"heatmap_{len(ground_truth)}.png"
     # Save the plot as a PNG image in the 'plots' folder
-    plt.show()
+    #plt.show()
+    heat_fig.canvas.draw()
+    heat_fig.canvas.flush_events()
     #plt.savefig(
     #    f'/{filename}')
     #plt.close(fig)
@@ -115,8 +127,9 @@ def plotHeatmap(poses, predictions, ground_truth):
 #gather all files names
 dir = "blenderproc/data_500_first"
 
-
-dir = "blenderproc/data"
+#dir = "blenderproc/data"
+#dir = "blenderproc/data_triangle"
+#dir = "blenderproc/data_1000"
 files=glob.glob(dir+"/*.hdf5")
 
 random.shuffle(files)
@@ -124,6 +137,8 @@ random.shuffle(files)
 train_data = files[:int(len(files)*0.8)]
 vali_data = files[int(len(files)*0.8):]
 
+#Set file name
+current_test_name = "batch_4_epoch_100_1e_4_triangle"
 
 #load first image to use img size
 image, ground_truth = load_image(files[0])
@@ -135,6 +150,9 @@ descriptor=Descriptor(imgSize)
 lenDiscriptors = 2048
 lenPose = 4
 learning_rate = 1e-4
+
+
+
 
 #define MLP from IPDF
 input_visual = tfkl.Input(shape=(lenDiscriptors,))
@@ -158,6 +176,10 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 plt.show()
 
+
+fig_loss_epoch = plt.figure()
+ax_loss_epoch = fig_loss_epoch.add_subplot(111)
+
 x_min, x_max = -0.3, 0.3
 y_min, y_max = -0.3, 0.3
 r_min, r_max = 0, 360
@@ -165,8 +187,8 @@ r_min, r_max = 0, 360
 position_samples = 100
 loss_list = []
 validation_loss_list=[]
-epochs=10
-batch_size=4 
+epochs = 100
+batch_size=4
 #split files into batches of 10
 
 def get_all_poses(x_num, y_num, r_num):
@@ -221,16 +243,26 @@ def get_random_poses_plus_correct(position_samples, ground_truth):
 
 #batches = [files[x:x+batch_size] for x in range(0, len(files), batch_size)]
 
+epoch_counter = 0
+heat_fig = plt.figure(figsize=(8, 6))
+heat_ax = heat_fig.add_subplot(111, projection='3d')
+
+epoch_lose_list = []
 for epoch in range(epochs):
 
-    file = random.sample(vali_data, 1)
 
-    image, ground_truth = load_image(file[0])
-    images=[image]
-    images = tf.convert_to_tensor(images)
-    all_poses = get_all_poses(25, 25, 25)
-    predictions = generate_pdf(descriptor.vision_model, mlp_model, images, all_poses)
-    plotHeatmap(all_poses, predictions, ground_truth)
+
+    temp_epoch_loss = []
+
+
+#    file = random.sample(vali_data, 1)
+#
+#    image, ground_truth = load_image(file[0])
+#    images=[image]
+#    images = tf.convert_to_tensor(images)
+#    all_poses = get_all_poses(0.05, 0.05, 10)
+#    predictions = generate_pdf(descriptor.vision_model, mlp_model, images, all_poses)
+#    plotHeatmap(all_poses, predictions, ground_truth, heat_fig,heat_ax, epoch_counter)
 
 
 
@@ -257,8 +289,12 @@ for epoch in range(epochs):
         loss = train_step(descriptor.vision_model, mlp_model, optimizer, images, ground_truths)
         print("loss: ", loss.numpy()," time: ", time.time()-st)
         loss_list.append(loss.numpy())
+        temp_epoch_loss.append(loss.numpy())
         ax.clear()
         ax.plot(loss_list)
+        ax.set_xlabel("Batch")
+        ax.set_ylabel("Loss")
+        ax.set_title("Loss per Batch", fontsize=20)
         fig.canvas.draw()
         fig.canvas.flush_events()
 
@@ -289,15 +325,44 @@ for epoch in range(epochs):
 
         # time to train_step
         st = time.time()
-        loss = validation_step(descriptor.vision_model, mlp_model, optimizer, images, ground_truths)
-        print("loss: ", loss.numpy(), " time: ", time.time() - st)
+
+        loss = validation_step(descriptor.vision_model, mlp_model, images, ground_truths)
+        #print("loss: ", loss.numpy(), " time: ", time.time() - st)
+
         validation_loses.append(loss)
+    
+    file = random.sample(vali_data, 1)
 
+    image, ground_truth = load_image(file[0])
+    images=[image]
+    images = tf.convert_to_tensor(images)
+    all_poses = get_all_poses(0.05, 0.05, 10)
+    predictions = generate_pdf(descriptor.vision_model, mlp_model, images, all_poses)
+    plotHeatmap(all_poses, predictions, ground_truth, heat_fig,heat_ax, epoch_counter)
 
+    print("Epoch loss: ", np.mean(np.array(temp_epoch_loss)))
+    epoch_lose_list.append(np.mean(np.array(temp_epoch_loss)))
+    ax_loss_epoch.clear()
+    ax_loss_epoch.plot(epoch_lose_list)
+    ax_loss_epoch.plot(validation_loss_list,'bo')
+    ax_loss_epoch.set_xlabel("Epoch")
+    ax_loss_epoch.set_ylabel("Loss")
+    ax_loss_epoch.set_title("Loss over Epoch", fontsize=20)
+    fig_loss_epoch.canvas.draw()
+    fig_loss_epoch.canvas.flush_events()
 
-
-
-
+    mlp_model.save("mlp_"+current_test_name+"_"+str(epoch_counter))
+    descriptor.vision_model.save("vm_"+current_test_name+"_"+str(epoch_counter))
+    heat_fig.savefig("new_training_output/Heat_map_"+current_test_name+"_"+str(epoch_counter)+".png")
+    fig.savefig("new_training_output/loss_"+current_test_name+"_"+str(epoch_counter)+".png")
+    epoch_counter+=1
     validation_loss=np.mean(np.array(validation_loses))
     print("Validation loss: ", validation_loss)
     validation_loss_list.append(validation_loss)
+    end_time = time.time()
+
+#When the trainign started as a date and time
+#print("Traning started at: ", start_time.strftime("%d/%m/%Y %H:%M:%S")," and ended at: ", end_time.strftime("%d/%m/%Y %H:%M:%S"))
+print("Training took: ", end_time-start_time, " seconds")
+
+
