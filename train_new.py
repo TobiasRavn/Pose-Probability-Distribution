@@ -41,7 +41,7 @@ def train_step(vision_model, mlp_model, optimizer, images, poses):
 
 
 def validation_step(vision_model, mlp_model, images, poses):
-    vision_description = vision_model(images, training=True)
+    vision_description = vision_model(images, training=False)
     loss = compute_loss(mlp_model, vision_description, poses, training=False)
 
     return loss
@@ -61,6 +61,7 @@ def generate_pdf(vision_model, mlp_model, images, poses):
 
 def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_counter):
     # Construct covariance matrix
+
     #plt.clf()
     predictions=np.squeeze(predictions)
     predictions=predictions/np.max(predictions)
@@ -79,6 +80,7 @@ def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_count
         y_pred=pose[1]
         r_pred=math.atan2(pose[3],pose[2])
         #print(predictions[i])
+
         heat_ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=2, color="red",alpha=np.clip(predictions[i]-0.1,0,1))  # , label='PP')
 
     # Add ground truth as a blue dot
@@ -89,6 +91,7 @@ def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_count
     if gt_z>math.pi:
         gt_z=gt_z-2*math.pi
     heat_ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")  # , label='GT')
+
 
     # Set axis labels and titles
     heat_ax.set_xlabel("X-coor")
@@ -123,6 +126,7 @@ def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_count
 
 #gather all files names
 dir = "blenderproc/data_500_first"
+
 #dir = "blenderproc/data"
 #dir = "blenderproc/data_triangle"
 #dir = "blenderproc/data_1000"
@@ -187,10 +191,16 @@ epochs = 100
 batch_size=4
 #split files into batches of 10
 
-def get_all_poses(step_x, step_y, step_r):
-    x_num = round((x_max - x_min + step_x) / step_x)
-    y_num = round((y_max - y_min + step_y) / step_y)
-    r_num = round((360) / step_r)
+def get_all_poses(x_num, y_num, r_num):
+
+    x_min=-1
+    x_max=1
+    y_min=-1
+    y_max=1
+
+    step_r=360/r_num
+
+
     x_range = np.linspace(x_min, x_max, int(x_num))
     y_range = np.linspace(y_min, x_max, int(y_num))
     r_range = np.linspace(0, 360 - step_r, int(r_num))
@@ -216,11 +226,16 @@ def get_random_poses_plus_correct(position_samples, ground_truth):
     y = ground_truth["y"]
     r = ground_truth["r"]
     x, y, r = float(x), float(y), float(r)
+
+    x=x/0.3
+    y=y/0.3
     r_rad = math.radians(r)
     poses[-1] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
+
+
     for j in range(position_samples - 1):
-        x = random.uniform(x_min, x_max)
-        y = random.uniform(y_min, y_max)
+        x = random.uniform(-1, 1)
+        y = random.uniform(-1, 1)
         r = random.uniform(r_min, r_max)
         r_rad = math.radians(r)
         poses[j] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
@@ -234,6 +249,7 @@ heat_ax = heat_fig.add_subplot(111, projection='3d')
 
 epoch_lose_list = []
 for epoch in range(epochs):
+
 
 
     temp_epoch_loss = []
@@ -309,8 +325,10 @@ for epoch in range(epochs):
 
         # time to train_step
         st = time.time()
+
         loss = validation_step(descriptor.vision_model, mlp_model, images, ground_truths)
         #print("loss: ", loss.numpy(), " time: ", time.time() - st)
+
         validation_loses.append(loss)
     
     file = random.sample(vali_data, 1)
