@@ -36,23 +36,12 @@ class Visual:
         # fig.canvas.flush_events()
 
 
-        self.figures_={}
-        self.plots={}
 
 
-
-    def tryCreatePlot(self, name):
-        if "key1" in self.figures_:
-            return
-        else:
-
-            figure=plt.figure()
-            self.plots[name] = figure.add_subplot(111)
-            self.figures_[name]=plt.figure()
-
-            plt.show()
 
     def plotLoss(self, losses):
+        pass
+
 
     def plotHeatmap(self, poses, predictions, ground_truth, epoch_counter, figName="heatmap"):
         # Construct covariance matrix

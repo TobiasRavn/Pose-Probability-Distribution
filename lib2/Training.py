@@ -12,6 +12,7 @@ import time
 from lib2.load_image import *
 from lib.Pose_Accumulator import *
 from lib2.Descriptor import *
+from lib2.Poses import *
 
 from lib2.ModelArchitecture import *
 
@@ -97,57 +98,16 @@ class Training:
 
 
 
-    def evaluate(self):
-        pass
+    def evaluate(self, images):
+        poses=self.get_all_poses(100,100,100)
+
+        logLikelihood = -self.compute_loss(images,poses,False)
+
+        return logLikelihood
 
 
-    def get_all_poses(self, x_num, y_num, r_num):
 
-        x_min = -1
-        x_max = 1
-        y_min = -1
-        y_max = 1
 
-        step_r = 360 / r_num
-
-        x_range = np.linspace(x_min, x_max, int(x_num))
-        y_range = np.linspace(y_min, x_max, int(y_num))
-        r_range = np.linspace(0, 360 - step_r, int(r_num))
-
-        size = x_num * y_num * r_num
-        allPoses = np.zeros([size, 4])
-        count = 0
-
-        for x in x_range:
-            for y in y_range:
-                for r in r_range:
-                    r_rad = math.radians(r)
-
-                    allPoses[count] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
-                    count += 1
-
-        return allPoses
-
-    def get_random_poses_plus_correct(self, position_samples, ground_truth):
-        poses = np.zeros((position_samples, 4))
-
-        x = ground_truth["x"]
-        y = ground_truth["y"]
-        r = ground_truth["r"]
-        x, y, r = float(x), float(y), float(r)
-
-        x = x / 0.3
-        y = y / 0.3
-        r_rad = math.radians(r)
-        poses[-1] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
-
-        for j in range(position_samples - 1):
-            x = random.uniform(-1, 1)
-            y = random.uniform(-1, 1)
-            r = random.uniform(self.r_min, self.r_max)
-            r_rad = math.radians(r)
-            poses[j] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
-        return poses
 
     def epochTrain(self, files):
         temp_epoch_loss = []
@@ -174,7 +134,7 @@ class Training:
                 image, ground_truth = load_image(file)
                 images[i] = image
 
-                ground_truths[i] = self.get_random_poses_plus_correct(self.position_samples, ground_truth)
+                ground_truths[i] = get_random_poses_plus_correct(self.position_samples, ground_truth)
 
             # convert numpy arrays to tensors
             images = tf.convert_to_tensor(images)
@@ -203,7 +163,7 @@ class Training:
                 image, ground_truth = load_image(file)
                 images[i] = image
 
-                ground_truths[i] = self.get_random_poses_plus_correct(self.position_samples, ground_truth)
+                ground_truths[i] = get_random_poses_plus_correct(self.position_samples, ground_truth)
 
             # convert numpy arrays to tensors
             images = tf.convert_to_tensor(images)
@@ -222,7 +182,7 @@ class Training:
         image, ground_truth = load_image(file[0])
         images = [image]
         images = tf.convert_to_tensor(images)
-        all_poses = self.get_all_poses(25, 25, 25)
+        all_poses = get_all_poses(25, 25, 25)
         predictions = self.modelAchitecture.generate_pdf(images, all_poses)
         #plotHeatmap(all_poses, predictions, ground_truth, heat_fig, heat_ax, epoch_counter)
 
