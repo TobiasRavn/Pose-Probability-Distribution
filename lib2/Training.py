@@ -17,10 +17,14 @@ from lib2.ModelArchitecture import *
 
 
 class Training:
-    def __init__(self, dir):
+    def __init__(self, dir, doEvaluation=True):
 
+
+        self.doEvaluation=doEvaluation
         self.dir = dir
         files = glob.glob(self.dir + "/*.hdf5")
+
+
 
         random.shuffle(files)
         # split files into training and validation data
@@ -46,14 +50,7 @@ class Training:
         # define optimizer
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.learning_rate)
 
-        # init plot of loss using plt
-        #plt.ion()
-        #fig = plt.figure()
-        #ax = fig.add_subplot(111)
-        #plt.show()
 
-        #fig_loss_epoch = plt.figure()
-        #ax_loss_epoch = fig_loss_epoch.add_subplot(111)
 
         self.x_min, self.x_max = -0.3, 0.3
         self.y_min, self.y_max = -0.3, 0.3
@@ -86,9 +83,9 @@ class Training:
             loss = self.compute_loss(images, poses)
         grads = tape.gradient(
             loss,
-            self.modelAchitecture.descriptor.vision_model.trainable_variables + self.modelAchitecture.mlp_model.trainable_variables)
+            self.modelAchitecture.vision_model.trainable_variables + self.modelAchitecture.mlp_model.trainable_variables)
         optimizer.apply_gradients(
-            zip(grads, self.modelAchitecture.descriptor.vision_model.trainable_variables +
+            zip(grads, self.modelAchitecture.vision_model.trainable_variables +
                 self.modelAchitecture.mlp_model.trainable_variables))
         return loss
 
@@ -98,6 +95,10 @@ class Training:
 
         return loss
 
+
+
+    def evaluate(self):
+        pass
 
 
     def get_all_poses(self, x_num, y_num, r_num):
@@ -183,19 +184,12 @@ class Training:
             st = time.time()
             loss = self.train_step(self.optimizer, images, ground_truths)
             print("loss: ", loss.numpy(), " time: ", time.time() - st)
-            #loss_list.append(loss.numpy())
-            #temp_epoch_loss.append(loss.numpy())
-            #ax.clear()
-            #ax.plot(loss_list)
-            #ax.set_xlabel("Batch")
-            #ax.set_ylabel("Loss")
-            #ax.set_title("Loss per Batch", fontsize=20)
-            #fig.canvas.draw()
-            #fig.canvas.flush_events()
+
 
     def epochEval(self, files):
 
-        validations_set = random.sample(files, 50)
+        validations_set = files
+        random.shuffle(validations_set)
 
         batches = [validations_set[x:x + self.batch_size] for x in range(0, len(validations_set), self.batch_size)]
 

@@ -16,20 +16,62 @@ class Visual:
     def __init__(self):
         pass
 
+        #init plot of loss using plt
+        plt.ion()
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
 
-    def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_counter):
+
+        fig_loss_epoch = plt.figure()
+        ax_loss_epoch = fig_loss_epoch.add_subplot(111)
+
+        # loss_list.append(loss.numpy())
+        # temp_epoch_loss.append(loss.numpy())
+        # ax.clear()
+        # ax.plot(loss_list)
+        # ax.set_xlabel("Batch")
+        # ax.set_ylabel("Loss")
+        # ax.set_title("Loss per Batch", fontsize=20)
+        # fig.canvas.draw()
+        # fig.canvas.flush_events()
+
+
+        self.figures_={}
+        self.plots={}
+
+
+
+    def tryCreatePlot(self, name):
+        if "key1" in self.figures_:
+            return
+        else:
+
+            figure=plt.figure()
+            self.plots[name] = figure.add_subplot(111)
+            self.figures_[name]=plt.figure()
+
+            plt.show()
+
+    def plotLoss(self, losses):
+
+    def plotHeatmap(self, poses, predictions, ground_truth, epoch_counter, figName="heatmap"):
         # Construct covariance matrix
+
+        self.tryCreatePlot(figName)
 
         # plt.clf()
         predictions = np.squeeze(predictions)
         predictions = predictions / np.max(predictions)
+
+
+
 
         # print("Predictions:", predictions)
         # print("Ground Truths:", ground_truth)
         # heat_fig = plt.figure(figsize=(8, 6))
         # heat_ax = heat_fig.add_subplot(111, projection='3d')
         # print(np.shape(predictions))
-        heat_ax.clear()
+        self.heat_ax.clear()
         for i in range(np.size(predictions)):
             pose = poses[i]
 
