@@ -59,6 +59,19 @@ def generate_pdf(vision_model, mlp_model, images, poses):
     return logits_norm
 
 
+def predict(vision_model, mlp_model, hdf5_image):
+    image, ground_truth = load_image(hdf5_image)
+    images = np.expand_dims(image, axis=0)
+    images = tf.convert_to_tensor(images)
+
+    all_poses = get_all_poses(0.05, 0.05, 10)
+    predictions = generate_pdf(vision_model, mlp_model, images, all_poses)
+    
+    max_prediction_index = tf.argmax(predictions)
+    estimated_pose = all_poses[max_prediction_index]
+    
+    return estimated_pose
+
 def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_counter):
     # Construct covariance matrix
     #plt.clf()
@@ -122,7 +135,7 @@ def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_count
 #tf.config.set_visible_devices([], 'GPU')
 
 #gather all files names
-dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/data1000"
+dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/data"
 
 #dir = "blenderproc/data"
 #dir = "blenderproc/data_triangle"
@@ -354,4 +367,38 @@ with tf.device('/device:GPU:0'):
 
     #When the trainign started as a date and time
     #print("Traning started at: ", start_time.strftime("%d/%m/%Y %H:%M:%S")," and ended at: ", end_time.strftime("%d/%m/%Y %H:%M:%S"))
+    
+    # Save the models
+mlp_model.save(f"mlp_{current_test_name}_final")
+descriptor.vision_model.save(f"vm_{current_test_name}_final")
+
+# Predict pose for a test image
+#test_image_path = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/data1000/888.hdf5"
+dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/data1000/888.hdf5"
+
+image, ground_truth = load_image(dir)
+
+predicted_pose = predict(descriptor.vision_model, mlp_model, dir)
+print("Predicted pose:", predicted_pose)
+
+# Extract ground truth pose values
+ground_truth_pose = np.array([ground_truth['x'], ground_truth['y'], ground_truth['r']])
+#ground_truth_pose = np.array([ground_truth['correct_key_for_x'], ground_truth['correct_key_for_y'], ground_truth['correct_key_for_z']])
+
+
+# Calculate the error between the predicted pose and ground truth
+#error = np.abs(ground_truth_pose - predicted_pose)
+#print("Error between predicted pose and ground truth:", error)
+
+print("Ground truth pose data type:", ground_truth_pose.dtype)
+#print("Predicted pose data type:", predicted_pose.dtype)
+
+ground_truth_pose = ground_truth_pose.astype(np.float64)
+#predicted_pose = predicted_pose.astype(np.float64)
+
+error = np.abs(ground_truth_pose - predicted_pose)
+print("Error between predicted pose and ground truth:", error)
+
+
+
 print("Training took: ", end_time-start_time, " seconds")
