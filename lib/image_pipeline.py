@@ -123,3 +123,24 @@ class ImageTransformer:
         image_array[pepper_pixels, pepper_columns] = 0
 
         return image_array
+
+
+    def add_gaussian_noise(self, mean, std_dev):
+        if isinstance(self.images, Image.Image):
+            # If only one image is given, convert to a list
+            self.images = [self.images]
+
+        for i, image in enumerate(self.images):
+            image_array = np.array(image)
+            gaussian_noise = np.random.normal(mean, std_dev, size=image_array.shape)
+            noised_array = np.clip(image_array + gaussian_noise, 0, 255).astype(np.uint8)
+            output_path = self._get_output_path(f"image_{i}.hdf5")
+            with h5py.File(output_path, 'w') as f:
+                f.create_dataset('colors', data=noised_array)
+                f.create_dataset('ground_truth', data="")  # You may want to change this
+
+            print(f"Image saved to {output_path}")
+            plt.imshow(noised_array)
+            plt.show()
+            
+            

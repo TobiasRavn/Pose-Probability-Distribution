@@ -11,6 +11,7 @@ import time
 from lib.load_image import *
 from lib.Pose_Accumulator import *
 from lib.Descriptor import *
+from lib.image_pipeline import *
 
 #start timer
 start_time = time.time()
@@ -125,9 +126,9 @@ def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_count
     #plt.show()
     heat_fig.canvas.draw()
     heat_fig.canvas.flush_events()
-    #plt.savefig(
-    #    f'/{filename}')
-    #plt.close(fig)
+    plt.savefig(
+       f'/{filename}')
+    plt.close(fig)
 
     #return average_distance
 
@@ -372,33 +373,57 @@ with tf.device('/device:GPU:0'):
 mlp_model.save(f"mlp_{current_test_name}_final")
 descriptor.vision_model.save(f"vm_{current_test_name}_final")
 
-# Predict pose for a test image
-#test_image_path = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/data1000/888.hdf5"
-dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/data1000/888.hdf5"
+# # Predict pose for a test image
+# #test_image_path = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/data1000/888.hdf5"
+# dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/data1000/888.hdf5"
 
-image, ground_truth = load_image(dir)
+# image, ground_truth = load_image(dir)
 
-predicted_pose = predict(descriptor.vision_model, mlp_model, dir)
-print("Predicted pose:", predicted_pose)
+# predicted_pose = predict(descriptor.vision_model, mlp_model, dir)
+# print("Predicted pose:", predicted_pose)
 
-# Extract ground truth pose values
-ground_truth_pose = np.array([ground_truth['x'], ground_truth['y'], ground_truth['r']])
-#ground_truth_pose = np.array([ground_truth['correct_key_for_x'], ground_truth['correct_key_for_y'], ground_truth['correct_key_for_z']])
+# # Extract ground truth pose values
+# ground_truth_pose = np.array([ground_truth['x'], ground_truth['y'], ground_truth['r']])
+# #ground_truth_pose = np.array([ground_truth['correct_key_for_x'], ground_truth['correct_key_for_y'], ground_truth['correct_key_for_z']])
 
 
-# Calculate the error between the predicted pose and ground truth
-#error = np.abs(ground_truth_pose - predicted_pose)
-#print("Error between predicted pose and ground truth:", error)
+# # Calculate the error between the predicted pose and ground truth
+# #error = np.abs(ground_truth_pose - predicted_pose)
+# #print("Error between predicted pose and ground truth:", error)
 
-print("Ground truth pose data type:", ground_truth_pose.dtype)
-#print("Predicted pose data type:", predicted_pose.dtype)
+# print("Ground truth pose data type:", ground_truth_pose.dtype)
+# #print("Predicted pose data type:", predicted_pose.dtype)
 
-ground_truth_pose = ground_truth_pose.astype(np.float64)
-#predicted_pose = predicted_pose.astype(np.float64)
+# ground_truth_pose = ground_truth_pose.astype(np.float64)
+# #predicted_pose = predicted_pose.astype(np.float64)
 
-error = np.abs(ground_truth_pose - predicted_pose)
-print("Error between predicted pose and ground truth:", error)
+# error = np.abs(ground_truth_pose - predicted_pose)
+# print("Error between predicted pose and ground truth:", error)
+
 
 
 
 print("Training took: ", end_time-start_time, " seconds")
+
+
+def evaluate_performance(self):
+    dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/test"
+    files = glob.glob(dir + "/*.hdf5")
+
+    # Define the different levels of standard deviation for the Gaussian noise
+    std_devs = [10, 20, 30, 40, 50]
+
+    # Initialize the list to store the images with Gaussian noise
+    noisy_images = []
+
+    # Iterate over the images and add Gaussian noise with different standard deviations
+    for file in files:
+        image, ground_truth = load_image(file)
+
+        for std_dev in std_devs:
+            transformer = ImageTransformer(image)
+            noisy_image = transformer.add_gaussian_noise(mean=0, std_dev=std_dev)
+            noisy_images.append(noisy_image)
+
+    # Now you have a list of images with added Gaussian noise (noisy_images) for further testing
+
