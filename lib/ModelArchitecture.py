@@ -9,14 +9,14 @@ tfkl = tf.keras.layers
 import matplotlib.pyplot as plt
 import time
 #own libs
-from lib2.load_image import *
+from lib.load_image import *
 #from Pose_Accumulator import *
-from lib2.Descriptor import *
+from lib.Descriptor import *
 
     # define class IPDF
 from PIL import Image
-from lib2.Poses import *
-from lib2.load_image import *
+from lib.Poses import *
+from lib.load_image import *
 
 tf.keras.utils.load_img
 

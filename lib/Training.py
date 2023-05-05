@@ -9,12 +9,12 @@ tfkl = tf.keras.layers
 import matplotlib.pyplot as plt
 import time
 #own libs
-from lib2.load_image import *
+from lib.load_image import *
 from lib.Pose_Accumulator import *
-from lib2.Descriptor import *
-from lib2.Poses import *
+from lib.Descriptor import *
+from lib.Poses import *
 
-from lib2.ModelArchitecture import *
+from lib.ModelArchitecture import *
 
 
 class Training:

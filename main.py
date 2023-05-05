@@ -1,54 +1,58 @@
-import sys
-import os
-import glob
+import random
+
 import numpy as np
-
-
-from lib.Controller import *
+import tensorflow as tf
+from tensorflow import keras
+import glob
+tfkl = tf.keras.layers
+import matplotlib.pyplot as plt
+import time
+#own libs
 from lib.load_image import *
-# from lib.image_pipeline import *
+from lib.Pose_Accumulator import *
+from lib.Descriptor import *
+
+from lib.Training import *
+from lib.ModelArchitecture import *
+#start timer
+start_time = time.time()
 
 
 
 
-def main() -> int:
-    """Echo the input arguments to standard output"""
-
-    dir = "blenderproc/data"
-    training = True
-
-    files=glob.glob(dir+"/*.hdf5")
-    image, ground_truth = load_image(files[0])
-
-    # ## Used for testing image rotation through image_pipeline class
-    # transformer = ImageTransformer(image, save_folder="output")
-    # transformer.rotate(90)
-    # ## Skew all images by (0.2, 0.3) and save to output_skew folder
-    # transformer.skew(x=0.2, y=0.3)
-
-    # transformer = ImageTransformer(image)
-    # transformer.salt_and_pepper_noise(50)  # Add 10% salt and pepper noise to all images
-
-    img=np.array(image)
-    size=img.shape
-    controller = Controller(size)
-    x_step=0.1
-    y_step=0.1
-    r_step=4
-
-    epochs=10
-    for epoch in range(epochs):
-        for count, file in enumerate(files):
-            image, ground_truth = load_image(file)
-            #print(ground_truth)
-            print("file: ",count,"/",len(files) , " epoch: ",epoch,"/", epochs)
-            controller.sample_space_all_at_once(image,x_step,y_step,r_step,truth=ground_truth,training=training)
-
-
-    return 0
-
-if __name__ == '__main__':
-    sys.exit(main())  # next section explains the use of sys.exit
 
 
 
+#dir = "blenderproc/data_500_first"
+
+dir = "blenderproc/data"
+# dir = "blenderproc/data_triangle"
+# dir = "blenderproc/data_1000"
+
+training = Training(dir)
+
+epochs=100
+training.startTraining(epochs)
+
+#files = glob.glob(dir + "/*.hdf5")
+
+#image, ground_truth = load_image(files[0])
+#img = np.array(image)
+#imgSize = img.shape
+# init descriptor
+
+# init mlp model
+#lenDiscriptors = 2048
+#lenPose = 4
+
+#model=ModelArchitecture(lenDiscriptors,lenPose,imgSize)
+
+#random.shuffle(files)
+#pose = model.getIterativeMaxPose(files[1],10,10)
+
+#print('{}, {}, {}'.format(pose[0],pose[1],pose[2]))
+
+
+end_time = time.time()
+
+print(end_time-start_time)
