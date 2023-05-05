@@ -15,6 +15,8 @@ from lib2.Descriptor import *
 
     # define class IPDF
 from PIL import Image
+from lib2.Poses import *
+from lib2.load_image import *
 
 tf.keras.utils.load_img
 
@@ -39,17 +41,17 @@ class ModelArchitecture:
 
 
 
-    def saveModel(self, name, path="/"):
-        mlp_string = path+name+"_mlp"
-        vision_string = path + name + "_vis"
+    def saveModel(self, path):
+        mlp_string = path+"_mlp"
+        vision_string = path + "_vis"
         self.mlp_model.save_weights(mlp_string)
         self.vision_model.save_weights(vision_string)
 
 
 
-    def loadModel(self, name, path="/"):
-        mlp_string = path + name + "_mlp"
-        vision_string = path + name + "_vis"
+    def loadModel(self, path):
+        mlp_string = path + "_mlp"
+        vision_string = path + "_vis"
         self.mlp_model.load_weights(mlp_string)
         self.vision_model.load_weights(vision_string)
 
@@ -64,6 +66,92 @@ class ModelArchitecture:
 
         return logits_norm
 
+
+    def generate_pdf_with_poses(self, images , x_num, y_num, r_num, xmin=-0.3, xmax=0.3, ymin=-0.3, ymax=0.3, rmin=0,rmax=360, training=False):
+        vision_description = self.vision_model(images, training=training)
+
+        poses = get_all_poses(x_num,y_num,r_num,xmin,xmax,ymin,ymax,rmin,rmax)
+
+        logits = self.mlp_model([vision_description, poses],
+                                training=False)[Ellipsis, 0]
+
+        logits_norm = tf.nn.softmax(logits, axis=-1)
+
+        return logits_norm
+
+    def getMaxPose(self, images , x_num, y_num, r_num, xmin=-0.3, xmax=0.3, ymin=-0.3, ymax=0.3, rmin=0,rmax=360, training=False):
+        vision_description = self.vision_model(images, training=training)
+
+        poses = get_all_poses(x_num, y_num, r_num, xmin, xmax, ymin, ymax, rmin, rmax)
+        poses = tf.convert_to_tensor(poses)
+
+        logits = self.mlp_model([vision_description, poses],
+                                training=False)[Ellipsis, 0]
+
+        logits_norm = tf.nn.softmax(logits, axis=-1)
+
+        index=np.argmax(logits_norm)
+
+        print(index)
+        print(poses[index])
+
+        return poses[index]
+
+    def getIterativeMaxPoseWithModel(self, imagePath, modelPath, resolution, depth=10, zoomFactor=0.5):
+        self.loadModel(modelPath)
+        return self.getIterativeMaxPose(imagePath,resolution,depth,zoomFactor)
+    def getIterativeMaxPose(self, imagePath, resolution, depth=10, zoomFactor=0.5):
+        image, ground_truth = load_image(imagePath)
+        img = np.array(image)
+        imgSize = img.shape
+
+        images = np.zeros((1, imgSize[0], imgSize[1], imgSize[2]))
+
+        images[0]=image
+        images = tf.convert_to_tensor(images)
+
+
+
+        widthX=0.3
+        widthY=0.3
+        widthR=180
+        centerX=0
+        centerY=0
+        centerR=180
+
+        xMinAbs = centerX - widthX
+        xMaxAbs = centerX + widthX
+        yMinAbs = centerY - widthY
+        yMaxAbs = centerY + widthY
+
+        for i in range(depth):
+            xMin=centerX-widthX
+            xMax=centerX+widthX
+            yMin = centerY - widthY
+            yMax = centerY + widthY
+            rMin = centerR - widthR
+            rMax = centerR + widthR
+
+            yMin = max(yMin, yMinAbs)
+            xMin = max(xMin, xMinAbs)
+            yMax = min(yMax, yMaxAbs)
+            xMax = min(xMax, xMaxAbs)
+
+            pose = self.getMaxPose(images,resolution,resolution,resolution,xMin,xMax,yMin,yMax,rMin,rMax)
+
+            x=pose[0]
+            y=pose[1]
+            r=math.atan2(pose[3],pose[2])
+            r=math.degrees(r)
+            x,y=unnormalizePose(x,y)
+            centerX=x
+            centerY=y
+            centerR=r
+            widthX*=zoomFactor
+            widthY*=zoomFactor
+            widthR*=zoomFactor
+
+        return [centerX,centerY,centerR]
 
 
 

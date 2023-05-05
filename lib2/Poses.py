@@ -9,6 +9,8 @@ import numpy as np
 def normalizePos(x,y):
     return x*3.3333, y*3.3333
 
+def unnormalizePose(x,y):
+    return x * 0.3, y * 0.3
 
 def get_all_poses(x_num, y_num, r_num, xmin=-0.3, xmax=0.3, ymin=-0.3, ymax=0.3, rmin=0,rmax=360):
 
