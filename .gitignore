@@ -13,3 +13,4 @@ lib/test_images/Handin Exercise 2 (Template).pdf.html
 lib/__pycache__/
 data/*
 blenderproc/data
+blenderproc/danfoss/
