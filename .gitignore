@@ -11,4 +11,5 @@ lib/test_images/Handin Exercise 2 (Template).pdf_files/1x1.png
 lib/test_images/test_image.png
 lib/test_images/Handin Exercise 2 (Template).pdf.html
 lib/__pycache__/
+data/*
 blenderproc/data
