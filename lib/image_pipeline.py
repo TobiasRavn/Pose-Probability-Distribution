@@ -4,6 +4,8 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 from skimage.transform import warp, AffineTransform
+import glob
+from lib.load_image import *
 
 
 class ImageTransformer:
@@ -125,10 +127,31 @@ class ImageTransformer:
         return image_array
 
 
+    # def add_gaussian_noise(self, mean, std_dev):
+    #     if isinstance(self.images, Image.Image):
+    #         # If only one image is given, convert to a list
+    #         self.images = [self.images]
+
+    #     for i, image in enumerate(self.images):
+    #         image_array = np.array(image)
+    #         gaussian_noise = np.random.normal(mean, std_dev, size=image_array.shape)
+    #         noised_array = np.clip(image_array + gaussian_noise, 0, 255).astype(np.uint8)
+    #         output_path = self._get_output_path(f"image_{i}.hdf5")
+    #         with h5py.File(output_path, 'w') as f:
+    #             f.create_dataset('colors', data=noised_array)
+    #             f.create_dataset('ground_truth', data="")
+
+    #         print(f"Image saved to {output_path}")
+    #         plt.imshow(noised_array)
+    #         plt.show()
+    #         plt.waitforbuttonpress()
+    
     def add_gaussian_noise(self, mean, std_dev):
         if isinstance(self.images, Image.Image):
             # If only one image is given, convert to a list
             self.images = [self.images]
+
+        noisy_images = []
 
         for i, image in enumerate(self.images):
             image_array = np.array(image)
@@ -137,10 +160,31 @@ class ImageTransformer:
             output_path = self._get_output_path(f"image_{i}.hdf5")
             with h5py.File(output_path, 'w') as f:
                 f.create_dataset('colors', data=noised_array)
-                f.create_dataset('ground_truth', data="")  # You may want to change this
+                f.create_dataset('ground_truth', data="")
 
             print(f"Image saved to {output_path}")
             plt.imshow(noised_array)
             plt.show()
+            noisy_images.append(noised_array)
+
+        return noisy_images
+
             
-            
+    def evaluate_performance(self):
+        dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/test"
+        files = glob.glob(dir + "/*.hdf5")
+
+        # Define the different levels of standard deviation for the Gaussian noise
+        std_devs = [10, 20]
+
+        # Initialize the list to store the images with Gaussian noise
+        noisy_images = []
+
+        # Iterate over the images and add Gaussian noise with different standard deviations
+        for file in files:
+            image, ground_truth = load_image(file)
+
+            for std_dev in std_devs:
+                transformer = ImageTransformer(image)
+                noisy_image = transformer.add_gaussian_noise(mean=10, std_dev=std_dev)
+                noisy_images.append(noisy_image)

@@ -59,6 +59,29 @@ def generate_pdf(vision_model, mlp_model, images, poses):
 
     return logits_norm
 
+        
+
+def evaluate_performance():
+    dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/test"
+    files = glob.glob(dir + "/*.hdf5")
+
+    # Define the different levels of standard deviation for the Gaussian noise
+    std_devs = [10, 20, 30, 40, 50]
+
+    # Initialize the list to store the images with Gaussian noise
+    noisy_images = []
+
+    # Iterate over the images and add Gaussian noise with different standard deviations
+    for file in files:
+        image, ground_truth = load_image(file)
+
+        for std_dev in std_devs:
+            transformer = ImageTransformer(image)
+            noisy_image = transformer.add_gaussian_noise(mean=0, std_dev=std_dev)
+            #noisy_image = add_gaussian_noise(mean=0, std_dev=std_dev)
+            noisy_images.append(noisy_image)
+            
+            
 
 def predict(vision_model, mlp_model, hdf5_image):
     image, ground_truth = load_image(hdf5_image)
@@ -126,9 +149,9 @@ def plotHeatmap(poses, predictions, ground_truth, heat_fig, heat_ax, epoch_count
     #plt.show()
     heat_fig.canvas.draw()
     heat_fig.canvas.flush_events()
-    plt.savefig(
-       f'/{filename}')
-    plt.close(fig)
+    # plt.savefig(
+    #    f'/{filename}')
+    # plt.close(fig)
 
     #return average_distance
 
@@ -369,6 +392,7 @@ with tf.device('/device:GPU:0'):
     #When the trainign started as a date and time
     #print("Traning started at: ", start_time.strftime("%d/%m/%Y %H:%M:%S")," and ended at: ", end_time.strftime("%d/%m/%Y %H:%M:%S"))
     
+    
     # Save the models
 mlp_model.save(f"mlp_{current_test_name}_final")
 descriptor.vision_model.save(f"vm_{current_test_name}_final")
@@ -401,29 +425,10 @@ descriptor.vision_model.save(f"vm_{current_test_name}_final")
 # print("Error between predicted pose and ground truth:", error)
 
 
-
+evaluate_performance()
 
 print("Training took: ", end_time-start_time, " seconds")
 
 
-def evaluate_performance(self):
-    dir = "/Users/reventlov/Documents/Robcand/2. Semester/ProjectARC/Project/IPDF/test"
-    files = glob.glob(dir + "/*.hdf5")
 
-    # Define the different levels of standard deviation for the Gaussian noise
-    std_devs = [10, 20, 30, 40, 50]
-
-    # Initialize the list to store the images with Gaussian noise
-    noisy_images = []
-
-    # Iterate over the images and add Gaussian noise with different standard deviations
-    for file in files:
-        image, ground_truth = load_image(file)
-
-        for std_dev in std_devs:
-            transformer = ImageTransformer(image)
-            noisy_image = transformer.add_gaussian_noise(mean=0, std_dev=std_dev)
-            noisy_images.append(noisy_image)
-
-    # Now you have a list of images with added Gaussian noise (noisy_images) for further testing
 
