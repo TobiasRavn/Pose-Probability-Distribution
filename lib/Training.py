@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import time
 #own libs
 from lib.load_image import *
-from lib.Pose_Accumulator import *
 from lib.Descriptor import *
 from lib.Poses import *
 

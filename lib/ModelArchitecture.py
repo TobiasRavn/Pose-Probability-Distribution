@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import time
 #own libs
 from lib.load_image import *
-#from Pose_Accumulator import *
 from lib.Descriptor import *
 
     # define class IPDF

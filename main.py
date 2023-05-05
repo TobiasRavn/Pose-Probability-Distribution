@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import time
 #own libs
 from lib.load_image import *
-from lib.Pose_Accumulator import *
 from lib.Descriptor import *
 
 from lib.Training import *
@@ -25,7 +24,7 @@ start_time = time.time()
 
 #dir = "blenderproc/data_500_first"
 
-dir = "blenderproc/data"
+dir = "data/cylinder_500"
 # dir = "blenderproc/data_triangle"
 # dir = "blenderproc/data_1000"
 
