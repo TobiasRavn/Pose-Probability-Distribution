@@ -17,21 +17,16 @@ from lib2.Training import *
 #start timer
 start_time = time.time()
 
-
-
-
-
-
-
 #dir = "blenderproc/data_500_first"
 
-dir = "blenderproc/data"
+#dir = "blenderproc/data"
+dir = "blenderproc/mini_set"
 # dir = "blenderproc/data_triangle"
 # dir = "blenderproc/data_1000"
 
 training = Training(dir)
 
-epochs=100
+epochs=5
 training.startTraining(epochs)
 
 

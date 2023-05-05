@@ -15,6 +15,7 @@ from lib2.Descriptor import *
 from lib2.Poses import *
 
 from lib2.ModelArchitecture import *
+from lib2.Visual import *
 
 
 class Training:
@@ -36,7 +37,7 @@ class Training:
         self.current_test_name = "batch_4_epoch_100_1e_4_triangle"
 
         # load first image to use img size
-        image, ground_truth = load_image(files[0])
+        image, self.ground_truth = load_image(files[0])
         img = np.array(image)
         self.imgSize = img.shape
         # init descriptor
@@ -58,19 +59,25 @@ class Training:
         self.r_min, self.r_max = 0, 360
 
         self.position_samples = 100
-        loss_list = []
-        validation_loss_list = []
         self.epochs = 100
         self.batch_size = 4
 
         self.modelAchitecture=ModelArchitecture(self.lenDiscriptors,self.lenPose, self.imgSize)
 
-
-    @tf.function
+        self.prediction = None
+        self.loss_list = []
+        self.vali_loss = []
+        self.epoch_loss = []
+        self.validation_loss_epoch = []
+        
+        
+        self.debug_loss = Plot_loss()
+        
+    
     def compute_loss(self, images, poses, training=True):
 
         logits_norm = self.modelAchitecture.generate_pdf(images,poses,training)
-
+        print(f"Logifts norm: {logits_norm[:, -1]}")
         loss_value = -tf.reduce_mean(tf.math.log(logits_norm[:, -1] / (
                     ((0.6 ** 2) * 3.1415 * 2) / poses.shape[1])))  # index -1 because last one is the correct pose
         return loss_value
@@ -109,7 +116,7 @@ class Training:
 
 
 
-    def epochTrain(self, files):
+    def epochTrain(self, files , debug = False):
         temp_epoch_loss = []
 
         #    file = random.sample(vali_data, 1)
@@ -129,21 +136,26 @@ class Training:
             # init images
             images = np.zeros((len(batch), self.imgSize[0], self.imgSize[1], self.imgSize[2]))
             # init ground truth
-            ground_truths = np.zeros((len(batch), self.position_samples, 4))
+            poses = np.zeros((len(batch), self.position_samples, 4))
             for i, file in enumerate(batch):
                 image, ground_truth = load_image(file)
                 images[i] = image
 
-                ground_truths[i] = get_random_poses_plus_correct(self.position_samples, ground_truth)
+                poses[i] = get_random_poses_plus_correct(self.position_samples, ground_truth)
 
             # convert numpy arrays to tensors
             images = tf.convert_to_tensor(images)
-            ground_truths = tf.convert_to_tensor(ground_truths)
+            poses = tf.convert_to_tensor(poses)
 
             # time to train_step
             st = time.time()
-            loss = self.train_step(self.optimizer, images, ground_truths)
+            loss = self.train_step(self.optimizer, images, poses)
+            self.loss_list.append(loss)
+            temp_epoch_loss.append(loss)
+            if debug:
+                self.debug_loss(self.loss_list)
             print("loss: ", loss.numpy(), " time: ", time.time() - st)
+        self.epoch_loss.append(np.mean(temp_epoch_loss))
 
 
     def epochEval(self, files):
@@ -152,8 +164,7 @@ class Training:
         random.shuffle(validations_set)
 
         batches = [validations_set[x:x + self.batch_size] for x in range(0, len(validations_set), self.batch_size)]
-
-        validation_loses = []
+        temp_validation_loses = []
 
         for count, batch in enumerate(batches):
             images = np.zeros((len(batch), self.imgSize[0], self.imgSize[1], self.imgSize[2]))
@@ -175,15 +186,16 @@ class Training:
             loss = self.validation_step(images, ground_truths)
             # print("loss: ", loss.numpy(), " time: ", time.time() - st)
 
-            validation_loses.append(loss)
-
+            temp_validation_loses.append(loss)
+            self.vali_loss.append(loss)
+        self.validation_loss_epoch.append(np.mean(temp_validation_loses))
         file = random.sample(self.vali_data, 1)
 
-        image, ground_truth = load_image(file[0])
+        image, self.ground_truth = load_image(file[0])
         images = [image]
         images = tf.convert_to_tensor(images)
-        all_poses = get_all_poses(25, 25, 25)
-        predictions = self.modelAchitecture.generate_pdf(images, all_poses)
+        self.all_poses = get_all_poses(25, 25, 25)
+        self.predictions = self.modelAchitecture.generate_pdf(images, self.all_poses)
         #plotHeatmap(all_poses, predictions, ground_truth, heat_fig, heat_ax, epoch_counter)
 
         #print("Epoch loss: ", np.mean(np.array(temp_epoch_loss)))
@@ -208,14 +220,17 @@ class Training:
         #
 
     def startTraining(self, epochs):
-
         print("Starting training")
         epoch_lose_list = []
+        heat_map = Heat_map(self.modelAchitecture)
+        plot_loss = Plot_loss()
+        
         for epoch in range(epochs):
-            self.epochTrain(self.train_data)
-
+            self.epochTrain(self.train_data, True)
             self.epochEval(self.vali_data)
-
+            #plot_loss(self.epoch_loss,self.validation_loss_epoch)
+            heat_map(self.vali_data[0])
             # Validation
+        plot_loss.save_figure("output/loss.png")
 
 
