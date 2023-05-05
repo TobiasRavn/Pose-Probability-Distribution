@@ -40,17 +40,17 @@ class ModelArchitecture:
 
 
 
-    def saveModel(self, path):
-        mlp_string = path+"_mlp"
-        vision_string = path + "_vis"
+    def saveModel(self, path, name = "weights"):
+        mlp_string = path+name+"_mlp"
+        vision_string = path + name+ "_vis"
         self.mlp_model.save_weights(mlp_string)
         self.vision_model.save_weights(vision_string)
 
 
 
-    def loadModel(self, path):
-        mlp_string = path + "_mlp"
-        vision_string = path + "_vis"
+    def loadModel(self, path, name = "weights"):
+        mlp_string = path + name + "_mlp"
+        vision_string = path + name+ "_vis"
         self.mlp_model.load_weights(mlp_string)
         self.vision_model.load_weights(vision_string)
 

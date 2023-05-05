@@ -28,7 +28,7 @@ class Heat_map:
         image, ground_truth = load_image(path)
         images = [image]
         images = tf.convert_to_tensor(images)
-        all_poses = get_all_poses(25, 25, 25)
+        all_poses = get_all_poses(10, 10, 10)
         predictions = self.model.generate_pdf(images, all_poses)
         predictions = np.squeeze(predictions)
         predictions = predictions / np.max(predictions)

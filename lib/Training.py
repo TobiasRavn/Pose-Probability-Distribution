@@ -5,9 +5,12 @@ import tensorflow as tf
 from tensorflow import keras
 import glob
 
+import os
+
 tfkl = tf.keras.layers
 import matplotlib.pyplot as plt
 import time
+import datetime
 # own libs
 from lib.load_image import *
 from lib.Descriptor import *
@@ -65,11 +68,11 @@ class Training:
         self.validation_loss_epoch = []
 
         self.debug_loss = Plot_loss()
+        self.debug_togle = True
 
     def compute_loss(self, images, poses, training=True):
 
         logits_norm = self.modelAchitecture.generate_pdf(images, poses, training)
-        print(f"Logifts norm: {logits_norm[:, -1]}")
         loss_value = -tf.reduce_mean(tf.math.log(logits_norm[:, -1] / (
                 ((0.6 ** 2) * 3.1415 * 2) / poses.shape[1])))  # index -1 because last one is the correct pose
         return loss_value
@@ -99,7 +102,7 @@ class Training:
 
         return logLikelihood
 
-    def epochTrain(self, files, debug=False):
+    def epochTrain(self, files, debug = False):
         temp_epoch_loss = []
 
         #    file = random.sample(vali_data, 1)
@@ -203,16 +206,24 @@ class Training:
     #
 
     def startTraining(self, epochs):
+        start_time = datetime.datetime.now()
+        object_type = self.dir.split("/")[1]
+        run_dir = "output/"+ object_type+ "_" + start_time.strftime("%Y_%m_%d_%H_%M")+ "/"
+        os.makedirs(run_dir+"figures/")
         print("Starting training")
         epoch_lose_list = []
         heat_map = Heat_map(self.modelAchitecture)
         plot_loss = Plot_loss()
 
         for epoch in range(epochs):
-            self.epochTrain(self.train_data, True)
+            self.epochTrain(self.train_data, self.debug_togle)
             self.epochEval(self.vali_data)
-            # plot_loss(self.epoch_loss,self.validation_loss_epoch)
+            plot_loss(self.epoch_loss,self.validation_loss_epoch)
             heat_map(self.vali_data[0])
+            plot_loss.save_figure(run_dir+"figures/loss_"+ str(epoch) + ".png")
+            heat_map.save_figure(run_dir+"figures/heat_map_"+ str(epoch) + ".png")
             # Validation
-        plot_loss.save_figure("output/loss.png")
-
+            if self.debug_togle:
+                self.debug_loss.save_figure(run_dir+"figures/debug_loss_"+ str(epoch) + ".png")
+            # Save model
+            self.modelAchitecture.saveModel(run_dir)
