@@ -8,8 +8,11 @@ import h5py
 
 
 #take input argument and save as int
-if len(sys.argv) > 1:
+if len(sys.argv) > 2:
     pictures = sys.argv[1]
+    save_path = sys.argv[2]
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     #try to convert to int
     try:
         pictures = int(pictures)
@@ -17,7 +20,7 @@ if len(sys.argv) > 1:
         print("Argument is not an integer")
         sys.exit()
 else:
-    print("Arguments: amount of pictures to create")
+    print("Arguments: (amount of pictures to create)  save_path in data/")
     sys.exit()
 
 
@@ -79,6 +82,6 @@ for i in range(0, pictures):
     data = bproc.renderer.render()
     ground_truth = [{"x": str(x), "y": str(y), "r": str(r)}]
     data["ground_truth"] = ground_truth
-    bproc.writer.write_hdf5("data/", data,append_to_existing_output=True)
+    bproc.writer.write_hdf5(save_path, data,append_to_existing_output=True)
     print("Rendered pose: " + str(poses))
     poses += 1
