@@ -56,7 +56,7 @@ class ModelArchitecture:
 
     @tf.function
     def generate_pdf(self, images, poses, training=False):
-        vision_description = self.vision_model(images, training=training)
+        vision_description = self.vision_model(images, training=True)
 
         logits = self.mlp_model([vision_description, poses],
                                                  training=False)[Ellipsis, 0]
