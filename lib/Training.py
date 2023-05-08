@@ -13,7 +13,6 @@ import time
 import datetime
 # own libs
 from lib.load_image import *
-from lib.Descriptor import *
 from lib.Poses import *
 
 from lib.ModelArchitecture import *

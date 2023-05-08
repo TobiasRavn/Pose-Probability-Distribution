@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import time
 #own libs
 from lib.load_image import *
-from lib.Descriptor import *
 
 from lib.Training import *
 from lib.ModelArchitecture import *
