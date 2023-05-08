@@ -55,7 +55,6 @@ class Training:
         self.r_min, self.r_max = 0, 360
 
         self.position_samples = 100
-        self.epochs = 100
         self.batch_size = 4
 
         self.modelAchitecture = ModelArchitecture(self.lenDiscriptors, self.lenPose, self.imgSize)
@@ -94,6 +93,7 @@ class Training:
 
         return loss
 
+    #Den her bliver ikke brugt
     def evaluate(self, images):
         poses = self.get_all_poses(100, 100, 100)
 
@@ -103,15 +103,6 @@ class Training:
 
     def epochTrain(self, files, debug = False):
         temp_epoch_loss = []
-
-        #    file = random.sample(vali_data, 1)
-        #
-        #    image, ground_truth = load_image(file[0])
-        #    images=[image]
-        #    images = tf.convert_to_tensor(images)
-        #    all_poses = get_all_poses(0.05, 0.05, 10)
-        #    predictions = generate_pdf(descriptor.vision_model, mlp_model, images, all_poses)
-        #    plotHeatmap(all_poses, predictions, ground_truth, heat_fig,heat_ax, epoch_counter)
 
         random.shuffle(files)
         batches = [files[x:x + self.batch_size] for x in range(0, len(files), self.batch_size)]
@@ -169,40 +160,17 @@ class Training:
 
             loss = self.validation_step(images, ground_truths)
             # print("loss: ", loss.numpy(), " time: ", time.time() - st)
-
             temp_validation_loses.append(loss)
-            self.vali_loss.append(loss)
-        self.validation_loss_epoch.append(np.mean(temp_validation_loses))
+            #Print tensor as number
+        temp_validation_loses=np.mean(np.array(temp_validation_loses)) #Might be needed
+        self.validation_loss_epoch.append(temp_validation_loses)
         file = random.sample(self.vali_data, 1)
 
         image, self.ground_truth = load_image(file[0])
         images = [image]
         images = tf.convert_to_tensor(images)
         self.all_poses = get_all_poses(25, 25, 25)
-        self.predictions = self.modelAchitecture.generate_pdf(images, self.all_poses)
-        # plotHeatmap(all_poses, predictions, ground_truth, heat_fig, heat_ax, epoch_counter)
-
-        # print("Epoch loss: ", np.mean(np.array(temp_epoch_loss)))
-        # epoch_lose_list.append(np.mean(np.array(temp_epoch_loss)))
-        # ax_loss_epoch.clear()
-        # ax_loss_epoch.plot(epoch_lose_list)
-        # ax_loss_epoch.plot(validation_loss_list, 'bo')
-        # ax_loss_epoch.set_xlabel("Epoch")
-        # ax_loss_epoch.set_ylabel("Loss")
-        # ax_loss_epoch.set_title("Loss over Epoch", fontsize=20)
-        # fig_loss_epoch.canvas.draw()
-        # fig_loss_epoch.canvas.flush_events()
-
-    #
-    # mlp_model.save("mlp_" + current_test_name + "_" + str(epoch_counter))
-    # descriptor.vision_model.save("vm_" + current_test_name + "_" + str(epoch_counter))
-    # heat_fig.savefig("new_training_output/Heat_map_" + current_test_name + "_" + str(epoch_counter) + ".png")
-    # fig.savefig("new_training_output/loss_" + current_test_name + "_" + str(epoch_counter) + ".png")
-    # epoch_counter += 1
-    # validation_loss = np.mean(np.array(validation_loses))
-    # print("Validation loss: ", validation_loss)
-    # validation_loss_list.append(validation_loss)
-    #
+        self.predictions = self.modelAchitecture.generate_pdf(images, self.all_poses, True)
 
     def startTraining(self, epochs):
         start_time = datetime.datetime.now()
@@ -210,19 +178,33 @@ class Training:
         run_dir = "output/"+ object_type+ "_" + start_time.strftime("%Y_%m_%d_%H_%M")+ "/"
         os.makedirs(run_dir+"figures/")
         print("Starting training")
-        epoch_lose_list = []
         heat_map = Heat_map(self.modelAchitecture)
+        plot_figures = Plot_the_figures(self.modelAchitecture)
         plot_loss = Plot_loss()
-
+        
+        temp_loss_print = []
+        temp_vali_print = []
+        
         for epoch in range(epochs):
             self.epochTrain(self.train_data, self.debug_togle)
             self.epochEval(self.vali_data)
+            
+            
             plot_loss(self.epoch_loss,self.validation_loss_epoch)
-            heat_map(self.vali_data[0])
+            #heat_map(self.vali_data[0])
+            plot_figures(self.vali_data[0])
             plot_loss.save_figure(run_dir+"figures/loss_"+ str(epoch) + ".png")
-            heat_map.save_figure(run_dir+"figures/heat_map_"+ str(epoch) + ".png")
+            plot_figures.save_figure(run_dir+"figures/figures_"+ str(epoch) + ".png")
+            #heat_map.save_figure(run_dir+"figures/heat_map_"+ str(epoch) + ".png")
             # Validation
             if self.debug_togle:
                 self.debug_loss.save_figure(run_dir+"figures/debug_loss_"+ str(epoch) + ".png")
             # Save model
             self.modelAchitecture.saveModel(run_dir)
+            # Save loss
+            np.savetxt(run_dir+"loss.txt", self.epoch_loss)
+            np.savetxt(run_dir+"validation_loss.txt", self.validation_loss_epoch)
+        
+        #Saving the minimal 
+        #np.savetxt(run_dir+"loss_min.txt", np.min(self.epoch_loss))
+        #np.savetxt(run_dir+"validation_loss.txt", np.min(self.epoch_loss))
