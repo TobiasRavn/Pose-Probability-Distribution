@@ -10,7 +10,7 @@ def normalizePos(x,y):
     return x*3.3333, y*3.3333
 
 def unnormalizePose(x,y):
-    return x * 0.3, y * 0.3
+    return x / 3.3333, y / 3.3333
 
 def get_all_poses(x_num, y_num, r_num, xmin=-0.3, xmax=0.3, ymin=-0.3, ymax=0.3, rmin=0,rmax=360):
 
@@ -20,7 +20,7 @@ def get_all_poses(x_num, y_num, r_num, xmin=-0.3, xmax=0.3, ymin=-0.3, ymax=0.3,
     step_r = (rmax-rmin) / r_num
 
     x_range = np.linspace(xmin, xmax, int(x_num))
-    y_range = np.linspace(ymin, xmax, int(y_num))
+    y_range = np.linspace(ymin, ymax, int(y_num))
     r_range = np.linspace(rmin, rmax - step_r, int(r_num))
 
     size = x_num * y_num * r_num
