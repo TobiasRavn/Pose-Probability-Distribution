@@ -113,9 +113,19 @@ class Plot_the_figures:
         gt_z = math.radians(gt_z)
         if gt_z > math.pi:
             gt_z = gt_z - 2 * math.pi
-        self.figure_2D_ax_xy.plot([gt_x], [gt_y], marker='o', markersize=10, color="blue")  # , label='GT')
-        self.figure_3D_ax_heat.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")  # , label='GT')
-        self.figure_2D_ax_rot.plot([gt_y], [gt_z], marker='o', markersize=10, color="blue")  # , label='GT')
+            
+        pose_guess_vector =  self.model.getIterativeMaxPose(path, 25)
+        x_pred = pose_guess_vector[0]
+        y_pred = pose_guess_vector[1]
+        r_pred = math.radians(pose_guess_vector[2])
+        self.figure_2D_ax_xy.plot([x_pred], [y_pred], marker='o', markersize=10, color="blue")  # , label='GT')
+        self.figure_3D_ax_heat.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=10, color="blue")  # , label='GT')
+        self.figure_2D_ax_rot.plot([y_pred], [r_pred], marker='o', markersize=10, color="blue")  # , label='GT')
+        #getIterativeMaxPose(self, imagePath, resolution, depth=10, zoomFactor=0.5):
+        #getMaxPose(self, images , x_num, y_num, r_num, xmin=-0.3, xmax=0.3, ymin=-0.3, ymax=0.3, rmin=0,rmax=360, training=False):
+        self.figure_2D_ax_xy.plot([gt_x], [gt_y], marker='o', markersize=10, color="green")  # , label='GT')
+        self.figure_3D_ax_heat.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="green")  # , label='GT')
+        self.figure_2D_ax_rot.plot([gt_y], [gt_z], marker='o', markersize=10, color="green")  # , label='GT')
         self.figure_2D_ax_image.imshow(image)
         self.figure_2D_ax_image.set_title("Image", fontsize=20)
         self.figure_2D_ax_image.axis('off')

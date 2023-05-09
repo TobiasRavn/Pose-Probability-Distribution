@@ -23,10 +23,10 @@ start_time = time.time()
 
 #dir = "data/data_500_first"
 
-dir = "data/cylinder_500"
+#dir = "data/cylinder_500"
 #dir = "data/data_cylinder_1000"
 #dir = "data/mini_set"
-#dir = "data/data_cylinder_1000"
+dir = "data/data_cup_1000"
 training = Training(dir)
 epochs=100
 training.startTraining(epochs)

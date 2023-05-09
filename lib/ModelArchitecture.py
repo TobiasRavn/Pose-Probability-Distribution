@@ -66,25 +66,25 @@ class ModelArchitecture:
 
 
     def generate_pdf_with_poses(self, images , x_num, y_num, r_num, xmin=-0.3, xmax=0.3, ymin=-0.3, ymax=0.3, rmin=0,rmax=360, training=False):
-        vision_description = self.vision_model(images, training=training)
+        vision_description = self.vision_model(images, training=True)
 
         poses = get_all_poses(x_num,y_num,r_num,xmin,xmax,ymin,ymax,rmin,rmax)
 
         logits = self.mlp_model([vision_description, poses],
-                                training=False)[Ellipsis, 0]
+                                training=training)[Ellipsis, 0]
 
         logits_norm = tf.nn.softmax(logits, axis=-1)
 
         return logits_norm
 
     def getMaxPose(self, images , x_num, y_num, r_num, xmin=-0.3, xmax=0.3, ymin=-0.3, ymax=0.3, rmin=0,rmax=360, training=False):
-        vision_description = self.vision_model(images, training=training)
+        vision_description = self.vision_model(images, training=True)
 
         poses = get_all_poses(x_num, y_num, r_num, xmin, xmax, ymin, ymax, rmin, rmax)
         poses = tf.convert_to_tensor(poses)
 
         logits = self.mlp_model([vision_description, poses],
-                                training=False)[Ellipsis, 0]
+                                training=training)[Ellipsis, 0]
 
         logits_norm = tf.nn.softmax(logits, axis=-1)
 

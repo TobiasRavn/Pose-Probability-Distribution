@@ -55,7 +55,7 @@ class Training:
         self.r_min, self.r_max = 0, 360
 
         self.position_samples = 100
-        self.batch_size = 4
+        self.batch_size = 6
 
         self.modelAchitecture = ModelArchitecture(self.lenDiscriptors, self.lenPose, self.imgSize)
 
