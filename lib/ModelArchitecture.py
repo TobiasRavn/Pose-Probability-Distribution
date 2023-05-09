@@ -90,8 +90,8 @@ class ModelArchitecture:
 
         index=np.argmax(logits_norm)
 
-        print(index)
-        print(poses[index])
+        #print(index)
+        #print(poses[index])
 
         return poses[index]
 
@@ -123,8 +123,8 @@ class ModelArchitecture:
         yMaxAbs = centerY + widthY
 
         for i in range(depth):
-            xMin=centerX-widthX
-            xMax=centerX+widthX
+            xMin = centerX - widthX
+            xMax = centerX + widthX
             yMin = centerY - widthY
             yMax = centerY + widthY
             rMin = centerR - widthR
