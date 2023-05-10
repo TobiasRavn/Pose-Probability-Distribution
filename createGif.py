@@ -18,19 +18,24 @@ import datetime
 from lib.Visual import *
 import imageio
 
+#==================Settings======================
 
+dataDir = "data/cylinder_rotation"
 
-dir = "data/cylinder_rotation"
-
-#dir = "data/cylinder_500"
-#dir = "data/data_cylinder_1000"
-#dir = "data/mini_set"
-#dir = "data/data_cup_1000"
+#dataDir = "data/cylinder_500"
+#dataDir = "data/data_cylinder_1000"
+#dataDir = "data/mini_set"
+#dataDir = "data/data_cup_1000"
 
 outputDir="output/rotationGif_"+ datetime.datetime.now().strftime("%Y_%m_%d_%H_%M") +"/"
 
+modelDir= "output/data_cup_1000_2023_05_09_01_17/"
 
-files = sorted(glob.glob(dir + "/*.hdf5"),key=len)
+
+#====================SETUP==========================
+files = sorted(glob.glob(dataDir + "/*.hdf5"),key=len)
+os.makedirs(outputDir)
+
 
 image, ground_truth = load_image(files[0])
 img = np.array(image)
@@ -44,16 +49,16 @@ lenPose = 4
 
 
 model=ModelArchitecture(lenDiscriptors,lenPose,imgSize)
-model.loadModel("output/data_cup_1000_2023_05_09_01_17/","weights")
+model.loadModel(modelDir,"weights")
 #random.shuffle(files)
 
-os.makedirs(outputDir)
+
 figures = Plot_the_figures(model)
 count=0
 
 
 
-#Create Gif Files
+#====================Create Gif Files====================
 gifFiles = []
 for file in files:
     print(file)
@@ -66,7 +71,7 @@ for file in files:
     count+=1
 
 
-#Compile Gif
+#====================Compile Gif====================
 imageDatas=[]
 for image in gifFiles:
     imageDatas.append(imageio.imread(image))
