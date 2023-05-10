@@ -20,7 +20,7 @@ if len(sys.argv) > 2:
         print("Argument is not an integer")
         sys.exit()
 else:
-    print("Arguments: (amount of pictures to create)  save_path in data/")
+    print("Arguments: (amount of pictures to create)  save_path")
     sys.exit()
 
 
@@ -41,7 +41,7 @@ surface_obj.set_rotation_euler(np.deg2rad([90, 0, 0]))
 # #cup_obj.set_rotation_euler(np.deg2rad([0, 0, 0]))
 # cup_obj.set_scale([0.05, 0.05, 0.05])
 
-objs = bproc.loader.load_obj("blenderproc/danfoss/013G5905_mm.ply")
+objs = bproc.loader.load_obj("blenderproc/cylinder/cylinder.obj")
 target_obj = objs[0]
 target_obj.set_scale([0.001, 0.001, 0.001])#convert to meters
 
@@ -53,28 +53,33 @@ light.set_energy(1000)
 light.set_color([1, 1 , 1])
 
 #camera settings
-#bproc.camera.set_resolution(1440, 1080)
+bproc.camera.set_resolution(1000, 1000)
 #setting camera intrinsics
-K = np.array([
-    [2743.8608, 0, 720],
-    [0, 2743.8608, 540],
-    [0, 0, 1]
-])
-bproc.camera.set_intrinsics_from_K_matrix(K, 1440, 1080)
+#K = np.array([
+#     [2743.8608, 0, 720],
+#     [0, 2743.8608, 540],
+#     [0, 0, 1]
+# ])
+#bproc.camera.set_intrinsics_from_K_matrix(K, 1440, 1080)
 # bproc.camera.set_intrinsics_from_blender_params(lens=4, lens_unit="MILLIMETERS")
-# bproc.camera.set_intrinsics_from_blender_params(lens=70, lens_unit="FOV")
+bproc.camera.set_intrinsics_from_blender_params(lens=70, lens_unit="FOV")
 
 #set the camera location
-cam_pose = bproc.math.build_transformation_mat([0, 0, 1.7], np.deg2rad([0, 0, 0]))
+cam_pose = bproc.math.build_transformation_mat([0, 0, 1], np.deg2rad([0, 0, 0]))
 #loop though the cup positions in x and y direction
 poses = 0
 # for x in np.arange(-0.3, 0.31, 0.3):
 #     for y in np.arange(-0.3, 0.31, 0.3):
 # for r in np.arange(0, 360, 90):
-for i in range(0, pictures):
-    x = np.random.uniform(-0.3, 0.3)
-    y = np.random.uniform(-0.3, 0.3)
-    r = np.random.uniform(0, 360)    
+#for i in range(0, pictures):
+#loop through 0-2pi in 0.1 steps
+for i in np.arange(0, 2*np.pi, 0.1):
+    # x = np.random.uniform(-0.3, 0.3)
+    # y = np.random.uniform(-0.3, 0.3)
+    # r = np.random.uniform(0, 360)    
+    x = 0.25*np.cos(i)
+    y = 0.25*np.sin(i)
+    r = np.rad2deg(i*2)
     bproc.utility.reset_keyframes()
     bproc.camera.add_camera_pose(cam_pose)
     target_obj.set_location([x, y, 0])
