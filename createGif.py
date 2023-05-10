@@ -16,10 +16,7 @@ from lib.ModelArchitecture import *
 start_time = time.time()
 import datetime
 from lib.Visual import *
-
-
-
-
+import imageio
 
 
 
@@ -54,7 +51,9 @@ os.makedirs(outputDir)
 figures = Plot_the_figures(model)
 count=0
 
-import imageio
+
+
+#Create Gif Files
 gifFiles = []
 for file in files:
     print(file)
@@ -67,40 +66,18 @@ for file in files:
     count+=1
 
 
-
-#with imageio.get_writer(outputDir+'animation.gif', mode='I') as writer:
-#    for filename in gifFiles:
-#        image = imageio.imread(filename)
-#        writer.append_data(image)
-
-
-
+#Compile Gif
 imageDatas=[]
 for image in gifFiles:
-
     imageDatas.append(imageio.imread(image))
-
-
-
-# imageio writes all the images in a .gif file at the gif_path
 imageio.mimsave(outputDir+'animation.gif', imageDatas, loop=0, duration = 0.3)
-
-
-#figures = Plot_the_figures(model)
-#figures(files[0],debug=True)
-#pose = model.getIterativeMaxPose(files[1],25,10)
-
 
 
 print("done")
 
 
-#print(f"Prediction:   {pose[0]},\t {pose[1]},\t {pose[2]}")
-#print(f"Ground Truth: {ground_truth['x']},\t {ground_truth['y']},\t {ground_truth['r']}")
-#print(ground_truth)
 
 end_time = time.time()
-while(1):
-    plt.show()
+
 
 #print(end_time-start_time)
