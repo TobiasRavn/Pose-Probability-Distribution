@@ -25,7 +25,7 @@ class Heat_map:
         image, ground_truth = load_image(path)
         images = [image]
         images = tf.convert_to_tensor(images)
-        all_poses = get_all_poses(25, 25, 25)
+        all_poses = get_all_poses(10, 10, 10)
         predictions = self.model.generate_pdf(images, all_poses)
         predictions = np.squeeze(predictions)
         predictions = predictions / np.max(predictions)
@@ -143,14 +143,13 @@ class Plot_the_figures:
         if gt_z > math.pi:
             gt_z = gt_z - 2 * math.pi
 
-        pose_guess_vector = self.model.getIterativeMaxPose(path, 25, 5, 4 / 20)
+        pose_guess_vector = self.model.getIterativeMaxPose(path, 30, 3, 4 / 20)
         x_pred = pose_guess_vector[0]
         y_pred = pose_guess_vector[1]
         r_pred = math.radians(pose_guess_vector[2])
 
         self.figure_2D_ax_xy.plot([x_pred], [y_pred], marker=markerStyle, markersize=10, color="blue")  # , label='GT')
-        self.figure_3D_ax_heat.plot([x_pred], [y_pred], [r_pred], marker=markerStyle, markersize=10,
-                                    color="blue")  # , label='GT')
+        self.figure_3D_ax_heat.plot([x_pred], [y_pred], [r_pred], marker=markerStyle, markersize=10, color="blue")  # , label='GT')
         self.figure_2D_ax_rot.plot([y_pred], [r_pred], marker=markerStyle, markersize=10, color="blue")  # , label='GT')
         # getIterativeMaxPose(self, imagePath, resolution, depth=10, zoomFactor=0.5):
         # getMaxPose(self, images , x_num, y_num, r_num, xmin=-0.3, xmax=0.3, ymin=-0.3, ymax=0.3, rmin=0,rmax=360, training=False):
