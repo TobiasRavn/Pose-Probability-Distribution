@@ -1,5 +1,6 @@
 import math
 
+import matplotlib.markers
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -71,15 +72,21 @@ class Plot_the_figures:
         self.figure_2D_ax_rot   = self.figure.add_subplot(224)
         
     
-    def __call__(self, path):
+    def __call__(self, path, debug=False):
         self.figure.show()
         image, ground_truth = load_image(path)
         images = [image]
         images = tf.convert_to_tensor(images)
-        all_poses = get_all_poses(20, 20, 20)
+        all_poses = get_all_poses(30, 30, 30)
         predictions = self.model.generate_pdf(images, all_poses)
         predictions = np.squeeze(predictions)
         predictions = predictions / np.max(predictions)
+        vals_greater_01=1
+        if(debug):
+            vals_greater_01 = (predictions > 0.1).sum()
+        drawChance=16000.0/vals_greater_01
+
+
         self.figure_2D_ax_xy.clear()
         self.figure_2D_ax_image.clear()
         self.figure_3D_ax_heat.clear()
@@ -105,7 +112,16 @@ class Plot_the_figures:
         self.figure_2D_ax_rot.set_xlim([-0.33, 0.33])
         self.figure_2D_ax_rot.set_ylim([-3.33, 3.33])
 
+        markerStyle = matplotlib.markers.MarkerStyle('o',fillstyle='none')
+
+
+
+
         for i in range(np.size(predictions)):
+
+            if(random.uniform(0,1)>drawChance and debug):
+                continue
+
             #print("Prediction: ", predictions[i])
             pose = all_poses[i]
             x_pred = pose[0]
@@ -119,25 +135,30 @@ class Plot_the_figures:
                                   alpha=np.clip(predictions[i] - 0.1, 0, 1))  # , label='PP')
                 self.figure_2D_ax_rot.plot([y_pred], [r_pred], marker='o', markersize=2, color="red",
                                   alpha=np.clip(predictions[i] - 0.1, 0, 1))  # , label='PP')
+
         gt_x = float(ground_truth["x"])
         gt_y = float(ground_truth["y"])
         gt_z = float(ground_truth["r"])
         gt_z = math.radians(gt_z)
         if gt_z > math.pi:
             gt_z = gt_z - 2 * math.pi
-            
-        pose_guess_vector =  self.model.getIterativeMaxPose(path, 20)
+
+        pose_guess_vector = self.model.getIterativeMaxPose(path, 25, 5, 4 / 20)
         x_pred = pose_guess_vector[0]
         y_pred = pose_guess_vector[1]
         r_pred = math.radians(pose_guess_vector[2])
-        self.figure_2D_ax_xy.plot([x_pred], [y_pred], marker='x', markersize=10, color="blue")  # , label='GT')
-        self.figure_3D_ax_heat.plot([x_pred], [y_pred], [r_pred], marker='x', markersize=10, color="blue")  # , label='GT')
-        self.figure_2D_ax_rot.plot([y_pred], [r_pred], marker='x', markersize=10, color="blue")  # , label='GT')
-        #getIterativeMaxPose(self, imagePath, resolution, depth=10, zoomFactor=0.5):
-        #getMaxPose(self, images , x_num, y_num, r_num, xmin=-0.3, xmax=0.3, ymin=-0.3, ymax=0.3, rmin=0,rmax=360, training=False):
-        self.figure_2D_ax_xy.plot([gt_x], [gt_y], marker='x', markersize=10, color="green")  # , label='GT')
-        self.figure_3D_ax_heat.plot([gt_x], [gt_y], [gt_z], marker='x', markersize=10, color="green")  # , label='GT')
-        self.figure_2D_ax_rot.plot([gt_y], [gt_z], marker='x', markersize=10, color="green")  # , label='GT')
+
+        self.figure_2D_ax_xy.plot([x_pred], [y_pred], marker=markerStyle, markersize=10, color="blue")  # , label='GT')
+        self.figure_3D_ax_heat.plot([x_pred], [y_pred], [r_pred], marker=markerStyle, markersize=10,
+                                    color="blue")  # , label='GT')
+        self.figure_2D_ax_rot.plot([y_pred], [r_pred], marker=markerStyle, markersize=10, color="blue")  # , label='GT')
+        # getIterativeMaxPose(self, imagePath, resolution, depth=10, zoomFactor=0.5):
+        # getMaxPose(self, images , x_num, y_num, r_num, xmin=-0.3, xmax=0.3, ymin=-0.3, ymax=0.3, rmin=0,rmax=360, training=False):
+        self.figure_2D_ax_xy.plot([gt_x], [gt_y], marker=markerStyle, markersize=10, color="green")  # , label='GT')
+        self.figure_3D_ax_heat.plot([gt_x], [gt_y], [gt_z], marker=markerStyle, markersize=10,
+                                    color="green")  # , label='GT')
+        self.figure_2D_ax_rot.plot([gt_y], [gt_z], marker=markerStyle, markersize=10, color="green")  # , label='GT')
+
         self.figure_2D_ax_image.imshow(image)
         self.figure_2D_ax_image.set_title("Image", fontsize=20)
         self.figure_2D_ax_image.axis('off')

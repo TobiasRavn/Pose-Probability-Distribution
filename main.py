@@ -50,8 +50,8 @@ model.loadModel("output/data_cup_1000_2023_05_09_01_17/","weights")
 random.shuffle(files)
 
 figures = Plot_the_figures(model)
-figures(files[0])
-#pose = model.getIterativeMaxPose(files[1],25,10)
+figures(files[0],debug=True)
+pose = model.getIterativeMaxPose(files[1],25,10)
 
 #print(f"Prediction:   {pose[0]},\t {pose[1]},\t {pose[2]}")
 #print(f"Ground Truth: {ground_truth['x']},\t {ground_truth['y']},\t {ground_truth['r']}")
