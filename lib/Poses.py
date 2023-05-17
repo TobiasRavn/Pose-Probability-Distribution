@@ -50,21 +50,21 @@ def get_random_poses_plus_correct(position_samples, ground_truth, xmin=-0.3, xma
 
     x,y= normalizePos(x,y)
     r_rad = math.radians(r)
-    poses[-1] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
+
 
     xList = np.random.uniform(xmin,xmax,position_samples)*3.3333
     yList = np.random.uniform(ymin, ymin, position_samples)*3.3333
     r = np.random.uniform(rmin, rmax,position_samples)
     r=np.deg2rad(r)
-    poses2=np.column_stack((xList,yList,np.cos(r),np.sin(r)))
+    poses=np.column_stack((xList,yList,np.cos(r),np.sin(r)))
+    poses[-1] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
 
-
-    for j in range(position_samples - 1):
-        x = random.uniform(xmin, xmax)
-        y = random.uniform(ymin, ymax)
-        r = random.uniform(rmin, rmax)
-        x,y=normalizePos(x,y)
-        r_rad = math.radians(r)
-        poses[j] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
+    #for j in range(position_samples - 1):
+    #    x = random.uniform(xmin, xmax)
+    #    y = random.uniform(ymin, ymax)
+    #    r = random.uniform(rmin, rmax)
+    #    x,y=normalizePos(x,y)
+    #    r_rad = math.radians(r)
+    #    poses[j] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
 
     return poses

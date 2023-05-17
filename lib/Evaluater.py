@@ -244,10 +244,10 @@ def calculateEvaluationLoss(ground_truth, image, model):
         logits_norm = model.generate_pdf(images, poses)
         loss_value = -(tf.math.log(logits_norm[0, -1] / (
                 ((0.6 ** 2) * 3.1415 * 2) / 100)))  # index -1 because last one is the correct pose
-        print(logits_norm[:, -1])
-        print(loss_value)
-        print(-tf.math.log(1 / (
-                ((0.6 ** 2) * 3.1415 * 2) / 100)  ))
+        #print(logits_norm[:, -1])
+        #print(loss_value)
+        #print(-tf.math.log(1 / (
+        #        ((0.6 ** 2) * 3.1415 * 2) / 100)  ))
         losses.append(loss_value)
     return np.mean(np.array(losses))
 
