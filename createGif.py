@@ -20,22 +20,23 @@ import imageio
 
 #==================Settings======================
 
-dataDir = "data/cylinder_rotation"
+#dataDir = "data/cylinder_rotation"
 
 #dataDir = "data/cylinder_500"
 #dataDir = "data/data_cylinder_1000"
 #dataDir = "data/mini_set"
-#dataDir = "data/data_cup_1000"
+dataDir = "data/data_cup_20"
 
 outputDir="output/rotationGif_"+ datetime.datetime.now().strftime("%Y_%m_%d_%H_%M") +"/"
 
-modelDir= "output/data_cup_1000_2023_05_09_01_17/"
+modelDir= "output/data_cup_1000_2023_05_11_13_28/"
 
 
 #====================SETUP==========================
-files = sorted(glob.glob(dataDir + "/*.hdf5"),key=len)
+files = sorted(glob.glob(dataDir + "/*.hdf5"))
 os.makedirs(outputDir)
 
+files = sorted(files,key=len)
 
 image, ground_truth = load_image(files[0])
 img = np.array(image)
@@ -53,7 +54,10 @@ model.loadModel(modelDir,"weights")
 #random.shuffle(files)
 
 
-figures = Plot_the_figures(model)
+#figures = Plot_the_figures(model)
+#figures = Heat_map(model)
+figures = The_image(model)
+
 count=0
 
 
@@ -79,8 +83,6 @@ imageio.mimsave(outputDir+'animation.gif', imageDatas, loop=0, duration = 0.3)
 
 
 print("done")
-
-
 
 end_time = time.time()
 
