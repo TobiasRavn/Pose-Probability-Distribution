@@ -1,4 +1,5 @@
 import math
+from typing import Any
 
 import matplotlib.markers
 import numpy as np
@@ -10,36 +11,80 @@ from lib.ModelArchitecture import *
 from lib.Poses import *
 
 
+class The_image:
+    def save_figure(self, path):
+        self.figure.savefig(path)
+        
+    def __init__(self, model, figsize=(6, 6)):
+        self.model = model
+        self.figure = plt.figure(figsize=figsize)
+        self.figure_ax_image = self.figure.add_subplot(111)
+    
+    def __call__(self, path, debug=False):
+        self.figure.show()
+        image, ground_truth = load_image(path)
+        self.figure_ax_image.clear()
+        self.figure_ax_image.imshow(image)
+        self.figure_ax_image.set_title("Image", fontsize=20)
+        self.figure_ax_image.axis('off')
+
+
 class Heat_map:
     def save_figure(self, path):
-        self.heat_figure.savefig(path)
+        self.figure.savefig(path)
 
     def __init__(self, model, figsize=(12, 6)):
         self.model = model
-        self.heat_figure = plt.figure(figsize=figsize)
-        self.image_ax = self.heat_figure.add_subplot(122)
-        self.heat_ax = self.heat_figure.add_subplot(121, projection='3d')
-
-    def __call__(self, path):
-        self.heat_figure.show()
+        self.figure = plt.figure(figsize=figsize)
+        self.figure_2D_ax_image = self.figure.add_subplot(121)
+        self.figure_3D_ax_heat  = self.figure.add_subplot(122, projection='3d')
+        
+    
+    def __call__(self, path, debug=False):
+        self.figure.show()
         image, ground_truth = load_image(path)
         images = [image]
         images = tf.convert_to_tensor(images)
-        all_poses = get_all_poses(10, 10, 10)
+        all_poses = get_all_poses(30, 30, 30)
         predictions = self.model.generate_pdf(images, all_poses)
         predictions = np.squeeze(predictions)
         predictions = predictions / np.max(predictions)
-        self.heat_ax.clear()
-        self.image_ax.clear()
+        vals_greater_01=1
+        if(debug):
+            vals_greater_01 = (predictions > 0.1).sum()
+        drawChance=16000.0/vals_greater_01
+
+
+        self.figure_2D_ax_image.clear()
+        self.figure_3D_ax_heat.clear()
+        self.figure_3D_ax_heat.set_title("3D Heatmap", fontsize=20)
+        self.figure_3D_ax_heat.set_xlabel("X")
+        self.figure_3D_ax_heat.set_ylabel("Y")
+        self.figure_3D_ax_heat.set_zlabel("Rotation")
+
+        self.figure_3D_ax_heat.set_xlim([-0.33, 0.33])
+        self.figure_3D_ax_heat.set_ylim([-0.33, 0.33])
+        self.figure_3D_ax_heat.set_zlim([-3.33, 3.33])
+
+        markerStyle = matplotlib.markers.MarkerStyle('o',fillstyle='none')
+
+
+
+
         for i in range(np.size(predictions)):
+
+            if(random.uniform(0,1)>drawChance and debug):
+                continue
+
+            #print("Prediction: ", predictions[i])
             pose = all_poses[i]
             x_pred = pose[0]
             y_pred = pose[1]
             r_pred = math.atan2(pose[3], pose[2])
             x_pred, y_pred = unnormalizePose(x_pred, y_pred)
-            # print(predictions[i])
-            self.heat_ax.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=2, color="red",
-                              alpha=np.clip(predictions[i] - 0.1, 0, 1))  # , label='PP')
+            if(predictions[i]>=0.1):
+                self.figure_3D_ax_heat.plot([x_pred], [y_pred], [r_pred], marker='o', markersize=2, color="red",
+                                  alpha=np.clip(predictions[i] - 0.1, 0, 1))  # , label='PP')
 
         gt_x = float(ground_truth["x"])
         gt_y = float(ground_truth["y"])
@@ -47,18 +92,22 @@ class Heat_map:
         gt_z = math.radians(gt_z)
         if gt_z > math.pi:
             gt_z = gt_z - 2 * math.pi
-        self.image_ax.imshow(image)
-        self.image_ax.set_title("Object in heatmap", fontsize=20)
-        self.image_ax.axis('off')
-        self.heat_ax.plot([gt_x], [gt_y], [gt_z], marker='o', markersize=10, color="blue")  # , label='GT')
-        self.heat_ax.set_xlabel("X-coor")
-        self.heat_ax.set_ylabel("Y-coor")
-        self.heat_ax.set_zlabel("Rotation")
-        self.heat_ax.set_title("Predicted and Ground Truth Poses", fontsize=20)
-        self.heat_figure.canvas.draw()
-        self.heat_figure.canvas.flush_events()
-        print("Done Plotting Heat Map")
 
+        pose_guess_vector = self.model.getIterativeMaxPose(path, 30, 3, 4 / 20)
+        x_pred = pose_guess_vector[0]
+        y_pred = pose_guess_vector[1]
+        r_pred = math.radians(pose_guess_vector[2])
+
+        self.figure_3D_ax_heat.plot([x_pred], [y_pred], [r_pred], marker=markerStyle, markersize=10, color="blue")  # , label='GT')
+        self.figure_3D_ax_heat.plot([gt_x], [gt_y], [gt_z], marker=markerStyle, markersize=10,
+                                    color="green")  # , label='GT')
+        self.figure_2D_ax_image.imshow(image)
+        self.figure_2D_ax_image.set_title("Image", fontsize=20)
+        self.figure_2D_ax_image.axis('off')
+        self.figure.canvas.draw()
+        self.figure.canvas.flush_events()
+        print("Done Plotting Heatmap")
+        
 class Plot_the_figures:
     def save_figure(self, path):
         self.figure.savefig(path)
