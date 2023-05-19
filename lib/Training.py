@@ -65,7 +65,9 @@ class Training:
         self.epoch_loss = []
         self.validation_loss_epoch = []
 
-        self.debug_loss = Plot_loss()
+        self.bestLoss, self.worstLoss = self.getMinMaxLoss()
+
+        self.debug_loss = Plot_loss(minLoss=self.bestLoss, maxLoss=self.worstLoss)
         self.debug_togle = True
 
     def compute_loss(self, images, poses, training=True):
@@ -191,8 +193,9 @@ class Training:
         #heat_map = Heat_map(self.modelAchitecture)
         plot_figures = Plot_the_figures(self.modelAchitecture)
 
-        bestLoss, worstLoss = self.getMinMaxLoss()
-        plot_loss = Plot_loss(minLoss=bestLoss,maxLoss=worstLoss)
+
+
+        plot_loss = Plot_loss(minLoss=self.bestLoss,maxLoss=self.worstLoss)
         #plot_figures_static = Plot_the_figures(self.modelAchitecture)
         
         #stored_file = self.vali_data[0] #For printing the figure with the same image
@@ -201,7 +204,7 @@ class Training:
         temp_vali_print = []
         
         #plot_figures_static(stored_file)
-        plot_figures(self.vali_data[0])
+        #plot_figures(self.vali_data[0])
         
         for epoch in range(epochs):
             self.epochTrain(self.train_data, self.debug_togle)
