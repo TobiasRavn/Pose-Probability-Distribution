@@ -19,6 +19,7 @@ import datetime
 from lib.Visual import *
 import imageio
 import matplotlib.ticker as mtick
+import matplotlib.patches as patches
 
 
 
@@ -91,6 +92,8 @@ def fullEvaluationImage(model, path, saveFolder, index=0, cutoffValue=0.90, reso
 def SingleUseHeatmapWithBoundingBox(image, sortedPoses, sortedPredictions, gt_z, gt_y, gt_x, x_pred, y_pred, r_pred,
                                     xminCutoff, xmaxCutoff, yminCutoff, ymaxCutoff, rminCutoff, rmaxCutoff):
     boundingBoxFigure = plt.figure(0, figsize=(12, 12))
+
+    num=len(sortedPredictions)
     boundingBoxFigure.clf()
     figure_2D_ax_xy = boundingBoxFigure.add_subplot(221)
     figure_2D_ax_image = boundingBoxFigure.add_subplot(222)
@@ -146,14 +149,47 @@ def SingleUseHeatmapWithBoundingBox(image, sortedPoses, sortedPredictions, gt_z,
     figure_3D_ax_heat.plot([gt_x], [gt_y], [gt_z], marker=markerStyle, markersize=10,
                            color="green")  # , label='GT')
     figure_2D_ax_rot.plot([gt_y], [gt_z], marker=markerStyle, markersize=10, color="green")  # , label='GT')
-    figure_2D_ax_rot.axhline(rminCutoff)
-    figure_2D_ax_rot.axhline(rmaxCutoff)
-    figure_2D_ax_rot.axvline(yminCutoff)
-    figure_2D_ax_rot.axvline(ymaxCutoff)
-    figure_2D_ax_xy.axhline(yminCutoff)
-    figure_2D_ax_xy.axhline(ymaxCutoff)
-    figure_2D_ax_xy.axvline(xminCutoff)
-    figure_2D_ax_xy.axvline(xmaxCutoff)
+
+    rectColor='blue'
+    lineColor='blue'
+
+    figure_2D_ax_rot.axhline(rminCutoff, color=lineColor, linestyle=':',alpha=0.7)
+    figure_2D_ax_rot.axhline(rmaxCutoff, color=lineColor, linestyle=':',alpha=0.7)
+    figure_2D_ax_rot.axvline(yminCutoff, color=lineColor, linestyle=':',alpha=0.7)
+    figure_2D_ax_rot.axvline(ymaxCutoff, color=lineColor, linestyle=':',alpha=0.7)
+    figure_2D_ax_rot.add_patch(
+        patches.Rectangle(
+            (yminCutoff, rminCutoff),  # (x,y)
+            ymaxCutoff - yminCutoff,  # width
+            rmaxCutoff - rminCutoff,  # height
+            fill=False,
+            zorder=2,
+            color=rectColor,
+            linewidth=2
+        )
+    )
+
+    #print(xminCutoff,yminCutoff)
+    figure_2D_ax_xy.axhline(yminCutoff, color=lineColor, linestyle=':',alpha=0.7)
+    figure_2D_ax_xy.axhline(ymaxCutoff, color=lineColor, linestyle=':',alpha=0.7)
+    figure_2D_ax_xy.axvline(xminCutoff, color=lineColor, linestyle=':',alpha=0.7)
+    figure_2D_ax_xy.axvline(xmaxCutoff, color=lineColor, linestyle=':',alpha=0.7)
+
+    figure_2D_ax_xy.add_patch(
+        patches.Rectangle(
+            (xminCutoff, yminCutoff),  # (x,y)
+            xmaxCutoff-xminCutoff,  # width
+            ymaxCutoff-yminCutoff,  # height
+            fill=False,
+            zorder=2,
+            color=rectColor,
+            linewidth = 2
+        )
+    )
+
+
+
+
     figure_2D_ax_image.imshow(image)
     figure_2D_ax_image.set_title("Image", fontsize=20)
     figure_2D_ax_image.axis('off')
@@ -223,7 +259,7 @@ def calculateEvaluationLoss(ground_truth, image, model):
     for i in range(4):
         images.append(image[0])
     images = tf.convert_to_tensor(np.array(images))
-    for i in range(4):
+    for i in range(1):
 
 
 
@@ -271,6 +307,7 @@ def createPlot(plotData, indicatorIndex, startIndex=-1,endIndex=-1):
     ax.set_xlim([startIndex, endIndex])
     #cumulativeFigure.show()
     return cumulativeFigure
+
 
 
 def evaluatePictures(model, files, outputFolder,cutoffPercentage=0.9, resolution=50, maxEvaluations=-1):
