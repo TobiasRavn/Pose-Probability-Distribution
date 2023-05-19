@@ -192,7 +192,7 @@ class Training:
         plot_figures = Plot_the_figures(self.modelAchitecture)
 
         bestLoss, worstLoss = self.getMinMaxLoss()
-        plot_loss = Plot_loss()
+        plot_loss = Plot_loss(minLoss=bestLoss,maxLoss=worstLoss)
         #plot_figures_static = Plot_the_figures(self.modelAchitecture)
         
         #stored_file = self.vali_data[0] #For printing the figure with the same image
