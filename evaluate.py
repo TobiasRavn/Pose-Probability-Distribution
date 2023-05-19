@@ -18,7 +18,7 @@ import datetime
 from lib.Visual import *
 import imageio
 from lib.Evaluater import *
-
+from lib.Poses import *
 #==================Settings======================
 
 dataDir = "data/data_500_first"
@@ -50,9 +50,21 @@ lenPose = 4
 
 
 
-model=ModelArchitecture(lenDiscriptors,lenPose,imgSize)
-model.loadModel(modelDir,"weights")
+
+#model=ModelArchitecture(lenDiscriptors,lenPose,imgSize)
+#model.loadModel(modelDir,"weights")
 #random.shuffle(files)
+poses = get_random_poses_plus_correct(10,ground_truth)
+
+print(poses)
+
+x = ground_truth["x"]
+y = ground_truth["y"]
+r = ground_truth["r"]
+x, y, r = float(x), float(y), float(r)
+
+x,y= normalizePos(x,y)
+r_rad = math.radians(r)
 
 
 count=0
@@ -62,7 +74,7 @@ count=0
 
 
 
-evaluatePictures(model,files,outputDir,maxEvaluations=4,cutoffPercentage=0.9,resolution=50)
+#evaluatePictures(model,files,outputDir,maxEvaluations=4,cutoffPercentage=0.9,resolution=50)
 
 
 

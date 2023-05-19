@@ -53,7 +53,7 @@ def get_random_poses_plus_correct(position_samples, ground_truth, xmin=-0.3, xma
 
 
     xList = np.random.uniform(xmin,xmax,position_samples)*3.3333
-    yList = np.random.uniform(ymin, ymin, position_samples)*3.3333
+    yList = np.random.uniform(ymin, ymax, position_samples)*3.3333
     r = np.random.uniform(rmin, rmax,position_samples)
     r=np.deg2rad(r)
     poses=np.column_stack((xList,yList,np.cos(r),np.sin(r)))
