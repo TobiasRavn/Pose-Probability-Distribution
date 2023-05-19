@@ -54,7 +54,7 @@ class Training:
         self.y_min, self.y_max = -0.3, 0.3
         self.r_min, self.r_max = 0, 360
 
-        self.position_samples = 100
+        self.position_samples = 10000
         self.batch_size = 3
 
         self.modelAchitecture = ModelArchitecture(self.lenDiscriptors, self.lenPose, self.imgSize)
@@ -72,9 +72,19 @@ class Training:
 
         logits_norm = self.modelAchitecture.generate_pdf(images, poses, training)
         loss_value = -tf.reduce_mean(tf.math.log(logits_norm[:, -1] / (
-                ((0.6 ** 2) * 3.1415 * 2) / poses.shape[1])))  # index -1 because last one is the correct pose
+                ((2.0 ** 2) * 3.1415 * 2) / poses.shape[1])))  # index -1 because last one is the correct pose
         return loss_value
 
+    def getMinMaxLoss(self):
+        maxLikelihood=1
+        minLikelihood=1.0/self.position_samples
+
+        bestLoss = -tf.math.log(maxLikelihood / (
+                ((2.0 ** 2) * 3.1415 * 2) / self.position_samples))
+        worstLoss = -tf.math.log(minLikelihood / (
+                ((2.0 ** 2) * 3.1415 * 2) / self.position_samples))
+        print(f"MinLoss: {bestLoss}\tMaxLoss: {worstLoss}")
+        return bestLoss, worstLoss
     @tf.function
     def train_step(self, optimizer, images, poses):
         with tf.GradientTape() as tape:
@@ -180,6 +190,8 @@ class Training:
         print("Starting training")
         #heat_map = Heat_map(self.modelAchitecture)
         plot_figures = Plot_the_figures(self.modelAchitecture)
+
+        bestLoss, worstLoss = self.getMinMaxLoss()
         plot_loss = Plot_loss()
         #plot_figures_static = Plot_the_figures(self.modelAchitecture)
         

@@ -215,24 +215,26 @@ class Plot_the_figures:
         print("Done Plotting 2D plots")
 
 class Plot_loss:
-    def save_figure(self, path):
-        self.loss_figure.savefig(path)
 
-    def __init__(self, plot_name="Loss", plot_x_name="Epoch", plot_y_name="Loss"):
+    def __init__(self, plot_name="Loss", plot_x_name="Epoch", plot_y_name="Loss", minLoss=-3.7889, maxLoss=0.8161):
+        self.minLoss = minLoss
+        self.maxLoss = maxLoss
         self.name = plot_name
         self.x_name = plot_x_name
         self.y_name = plot_y_name
         self.loss_figure = plt.figure()
         self.loss_ax = self.loss_figure.add_subplot(111)
 
+    def save_figure(self, path):
+        self.loss_figure.savefig(path)
     def __call__(self, data_list_A, data_list_B=None):
         self.loss_figure.show()
         self.loss_ax.clear()
         self.loss_ax.plot(data_list_A)
         if data_list_B is not None:
             self.loss_ax.plot(data_list_B, 'ro')
-        self.loss_ax.axhline(y=0.8161, color='0.8', linestyle='--')
-        self.loss_ax.axhline(y=-3.7889, color='0.8', linestyle='--')
+        self.loss_ax.axhline(y=self.maxLoss, color='0.8', linestyle='--')
+        self.loss_ax.axhline(y=self.minLoss, color='0.8', linestyle='--')
         self.loss_ax.set_xlabel(self.x_name)
         self.loss_ax.set_ylabel(self.y_name)
         self.loss_ax.set_title(self.name, fontsize=20)

@@ -296,8 +296,11 @@ def createPlot(plotData, indicatorIndex, startIndex=-1,endIndex=-1):
     cumulativeFigure = plt.figure(1, (7, 4))
     cumulativeFigure.clf()
     ax = cumulativeFigure.add_subplot(1, 1, 1)
-    ax.axhline(plotData[indicatorIndex])
-    ax.axvline(indicatorIndex, label="test")
+    ax.axhline(plotData[indicatorIndex],    color='green', linestyle="--")
+    ax.axvline(indicatorIndex,              color='green', linestyle="--")
+
+    plt.xlabel("Percentile of Poses")
+    plt.ylabel("Cumulative probability")
     # print(percent,percentile)
     ax.plot(plotData)
     # print(np.sum(sortedPredictions[precentCutoffIndex:]))
