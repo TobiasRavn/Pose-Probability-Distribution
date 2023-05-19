@@ -204,7 +204,7 @@ class Training:
         temp_vali_print = []
         
         #plot_figures_static(stored_file)
-        #plot_figures(self.vali_data[0])
+        plot_figures(self.vali_data[0])
         
         for epoch in range(epochs):
             self.epochTrain(self.train_data, self.debug_togle)
