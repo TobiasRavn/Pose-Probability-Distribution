@@ -45,6 +45,7 @@ def fullEvaluationImage(model, path, saveFolder, index=0, cutoffValue=0.90, reso
     predictions = np.squeeze(predictions)
 
     ground_truth_prediction = predictions[-1]
+
     #predictions = predictions / np.max(predictions)
     vals_greater_01 = 1
 
@@ -76,6 +77,7 @@ def fullEvaluationImage(model, path, saveFolder, index=0, cutoffValue=0.90, reso
     precentCutoffIndex = np.searchsorted(cumulativePredictions, 1-cutoffValue)
 
     groundTruthIndex = np.searchsorted(sortedPredictions, ground_truth_prediction)
+    groundTruthPercentage=groundTruthIndex/size
 
     percentile = precentCutoffIndex / size
     percent = cumulativePredictions[precentCutoffIndex]
@@ -115,7 +117,9 @@ def fullEvaluationImage(model, path, saveFolder, index=0, cutoffValue=0.90, reso
     boundingBoxFigure.savefig(saveFolder+f"Heatmap_BoundingBox_{index}")
     cumulativeFigure.savefig(saveFolder + f"Cumulative_{index}")
 
-    return loss_value, percentileInfo,cutoffLimitBoundingBox,groundTruth,prediction
+    withing95 = 1
+    if(groundTruthPercentage<0.95): withing95=0
+    return loss_value, percentileInfo,cutoffLimitBoundingBox,groundTruth,prediction, groundTruthPercentage
 
 
 def SingleUseHeatmapWithBoundingBox(image, sortedPoses, sortedPredictions, gt_z, gt_y, gt_x, x_pred, y_pred, r_pred,
@@ -358,6 +362,7 @@ def evaluatePictures(model, files, outputFolder,cutoffPercentage=0.9, resolution
     percentiles=[]
     variances=[]
     predictionDeltas=[]
+    within95s=[]
 
     numPoses=resolution*resolution*resolution
 
@@ -368,8 +373,8 @@ def evaluatePictures(model, files, outputFolder,cutoffPercentage=0.9, resolution
         print(f"===========================\n"
               f"\tEvaluation: {i}\n"
               f"===========================\n")
-        loss_value, percentileInfo, cutoffLimitBoundingBox, groundTruth, prediction=fullEvaluationImage(model,files[i],outputFolder,i,cutoffPercentage,resolution)
-
+        loss_value, percentileInfo, cutoffLimitBoundingBox, groundTruth, prediction, within95=fullEvaluationImage(model,files[i],outputFolder,i,cutoffPercentage,resolution)
+        within95s.append(within95)
 
         lossValues.append(loss_value)
         percentiles.append(percentileInfo[0])
@@ -381,7 +386,7 @@ def evaluatePictures(model, files, outputFolder,cutoffPercentage=0.9, resolution
         variances.append(variance)
         predictionDeltas.append(np.abs(groundTruth-prediction))
 
-
+    within95s = np.array(within95s)
     lossValues = np.array(lossValues)
     percentiles = np.array(percentiles)
     variances = np.array(variances)
@@ -394,6 +399,8 @@ def evaluatePictures(model, files, outputFolder,cutoffPercentage=0.9, resolution
 
     file.write("\n")
 
+    file.write( "GroundtruthsWithin95% := "   +   np.array2string(np.average(within95s), formatter={'float_kind':lambda x: "%.4f" % x})  +"\n")
+    file.write("\n")
     file.write( "%Loss\n")
     file.write( "averageLoss := "   +   np.array2string(np.average(lossValues), formatter={'float_kind':lambda x: "%.4f" % x})  +"\n")
     file.write("minLoss := "        +   np.array2string(np.min(lossValues), formatter={'float_kind':lambda x: "%.4f" % x})      +"\n")
@@ -407,22 +414,22 @@ def evaluatePictures(model, files, outputFolder,cutoffPercentage=0.9, resolution
     file.write("maxPercentile := "      + np.array2string(np.max(percentiles)*numPoses, formatter={'float_kind':lambda x: "%.4f" % x})       + "\n")
     file.write("\n")
 
-    file.write("%PosesAbove90%\n")
-    file.write("averagePercentile := " + np.array2string(numPoses-np.average(percentiles) * numPoses,
+    file.write("%PosesAbove95%\n")
+    file.write("averageAbove95% := " + np.array2string(numPoses-np.average(percentiles) * numPoses,
                                                          formatter={'float_kind': lambda x: "%.4f" % x}) + "\n")
-    file.write("maxPercentile := " + np.array2string(numPoses-np.min(percentiles) * numPoses,
+    file.write("maxAbove95% := " + np.array2string(numPoses-np.min(percentiles) * numPoses,
                                                      formatter={'float_kind': lambda x: "%.4f" % x}) + "\n")
-    file.write("minPercentile := " + np.array2string(numPoses-np.max(percentiles) * numPoses,
+    file.write("minAbove95% := " + np.array2string(numPoses-np.max(percentiles) * numPoses,
                                                      formatter={'float_kind': lambda x: "%.4f" % x}) + "\n")
 
     file.write("\n")
 
-    file.write("%Percentile\n")
-    file.write("averagePercentile := " + np.array2string(np.average(percentiles),
+    file.write("%PosesBelow95%\n")
+    file.write("averageAbove95% := " + np.array2string(np.average(percentiles),
                                                          formatter={'float_kind': lambda x: "%.4f" % x}) + "\n")
-    file.write("minPercentile := " + np.array2string(np.min(percentiles),
+    file.write("minBelow95% := " + np.array2string(np.min(percentiles),
                                                      formatter={'float_kind': lambda x: "%.4f" % x}) + "\n")
-    file.write("maxPercentile := " + np.array2string(np.max(percentiles),
+    file.write("maxBelow95% := " + np.array2string(np.max(percentiles),
                                                      formatter={'float_kind': lambda x: "%.4f" % x}) + "\n")
 
     file.write("\n")
