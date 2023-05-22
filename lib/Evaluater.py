@@ -29,8 +29,22 @@ def fullEvaluationImage(model, path, saveFolder, index=0, cutoffValue=0.90, reso
     images = [image]
     images = tf.convert_to_tensor(images)
     all_poses = get_all_poses(resolution,resolution,resolution)
+
+    x = ground_truth["x"]
+    y = ground_truth["y"]
+    r = ground_truth["r"]
+    x, y, r = float(x), float(y), float(r)
+
+    x, y = normalizePos(x, y)
+    r_rad = math.radians(r)
+
+    all_poses[-1] = np.array([x, y, math.cos(r_rad), math.sin(r_rad)])
+
+
     predictions = model.generate_pdf(images, all_poses)
     predictions = np.squeeze(predictions)
+
+    ground_truth_prediction = predictions[-1]
     #predictions = predictions / np.max(predictions)
     vals_greater_01 = 1
 
@@ -39,6 +53,9 @@ def fullEvaluationImage(model, path, saveFolder, index=0, cutoffValue=0.90, reso
 
     # combine, sort and break apart
     indices = np.argsort(predictions)
+
+    #groundTruthIndex = indices[-1]
+
     sortedPredictions=predictions[indices]
     sortedPoses=all_poses[indices]
 
@@ -58,12 +75,14 @@ def fullEvaluationImage(model, path, saveFolder, index=0, cutoffValue=0.90, reso
 
     precentCutoffIndex = np.searchsorted(cumulativePredictions, 1-cutoffValue)
 
+    groundTruthIndex = np.searchsorted(sortedPredictions, ground_truth_prediction)
+
     percentile = precentCutoffIndex / size
     percent = cumulativePredictions[precentCutoffIndex]
 
 
     #=================CUMULATIVE FIGURE====================
-    cumulativeFigure = createPlot(cumulativePredictions, precentCutoffIndex, startIndex=lowIndex)
+    cumulativeFigure = createPlot(cumulativePredictions, precentCutoffIndex, startIndex=lowIndex, groundTruthIndex=groundTruthIndex)
 
     #================ExtractGround Truth=======================
     gt_x, gt_y, gt_z = extractGroundTruth(ground_truth)
@@ -298,7 +317,7 @@ def calculateEvaluationLoss(ground_truth, image, model):
     return np.mean(np.array(losses))
 
 
-def createPlot(plotData, indicatorIndex, startIndex=-1,endIndex=-1):
+def createPlot(plotData, indicatorIndex, startIndex=-1,endIndex=-1, groundTruthIndex=-1):
 
     size = len(plotData)
     if startIndex == -1: startIndex=0
@@ -306,8 +325,11 @@ def createPlot(plotData, indicatorIndex, startIndex=-1,endIndex=-1):
     cumulativeFigure = plt.figure(1, (7, 4))
     cumulativeFigure.clf()
     ax = cumulativeFigure.add_subplot(1, 1, 1)
-    ax.axhline(plotData[indicatorIndex],    color='green', linestyle="--")
-    ax.axvline(indicatorIndex,              color='green', linestyle="--")
+    ax.axhline(plotData[indicatorIndex],    color='blue', linestyle="--")
+    ax.axvline(indicatorIndex,              color='blue', linestyle="--")
+    if(groundTruthIndex>=0):
+        ax.axhline(plotData[groundTruthIndex], color='green', linestyle="--")
+        ax.axvline(groundTruthIndex, color='green', linestyle="--")
 
     plt.xlabel("Percentile of Poses")
     plt.ylabel("Cumulative probability")
