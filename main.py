@@ -18,12 +18,13 @@ start_time = time.time()
 from lib.Visual import *
 
 
-dir = "data/data_500_first"
+#dir = "data/data_500_first"
 
 #dir = "data/cylinder_500"
 #dir = "data/data_cylinder_1000"
 #dir = "data/mini_set"
 #dir = "data/data_cup_1000"
+dir = "data/data_triangle_1000"
 #dir = "data/data_triangle"
 #dir = "data/5905"
 
