@@ -162,14 +162,14 @@ def SingleUseHeatmapWithBoundingBox(image, sortedPoses, sortedPredictions, gt_z,
         currentY = pose[1]
         currentR = math.atan2(pose[3], pose[2])
         currentX, currentY = unnormalizePose(currentX, currentY)
-        if (scaledSortedPredictions[i] >= 0.1):
+        if (scaledSortedPredictions[i] >= 0.01):
             # print(i)
             figure_2D_ax_xy.plot([currentX], [currentY], marker='o', markersize=2, color="red",
-                                 alpha=np.clip(scaledSortedPredictions[i] - 0.1, 0, 1))  # , label='PP')
+                                 alpha=np.clip(scaledSortedPredictions[i] - 0.01, 0, 1))  # , label='PP')
             figure_3D_ax_heat.plot([currentX], [currentY], [currentR], marker='o', markersize=2, color="red",
-                                   alpha=np.clip(scaledSortedPredictions[i] - 0.1, 0, 1))  # , label='PP')
+                                   alpha=np.clip(scaledSortedPredictions[i] - 0.01, 0, 1))  # , label='PP')
             figure_2D_ax_rot.plot([currentY], [currentR], marker='o', markersize=2, color="red",
-                                  alpha=np.clip(scaledSortedPredictions[i] - 0.1, 0, 1))  # , label='PP')
+                                  alpha=np.clip(scaledSortedPredictions[i] - 0.01, 0, 1))  # , label='PP')
         else:
             pass
     figure_2D_ax_xy.plot([x_pred], [y_pred], marker=markerStyle, markersize=10, color="blue")  # , label='GT')
@@ -332,19 +332,19 @@ def createPlot(plotData, indicatorIndex, startIndex=-1,endIndex=-1, groundTruthI
     ax.axhline(plotData[indicatorIndex],    color='red', linestyle="--", label=f"Percentage cutoff")
     ax.axvline(indicatorIndex,              color='red', linestyle="--")
     if(groundTruthIndex>=0):
-        ax.axhline(plotData[groundTruthIndex], color='green', linestyle="..", label="Ground Truth")
-        ax.axvline(groundTruthIndex, color='green', linestyle="..")
+        ax.axhline(plotData[groundTruthIndex], color='green', linestyle=":", label="Ground Truth")
+        ax.axvline(groundTruthIndex, color='green', linestyle=":")
 
 
 
 
 
     # Slice list to remove first handle
-    plt.legend()
     plt.xlabel("Percentile of Poses")
     plt.ylabel("Cumulative probability")
     # print(percent,percentile)
     ax.plot(plotData, label="Cumulative Distribution")
+    plt.legend()
     # print(np.sum(sortedPredictions[precentCutoffIndex:]))
     # print(lowIndex)
     ax.xaxis.set_major_formatter(mtick.PercentFormatter(size))

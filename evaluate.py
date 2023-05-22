@@ -21,20 +21,22 @@ from lib.Evaluater import *
 from lib.Poses import *
 #==================Settings======================
 
-dataDir = "data/data_500_first"
-
+#dataDir = "data/data_500_first"
 #dataDir = "data/cylinder_500"
 #dataDir = "data/data_cylinder_1000"
 #dataDir = "data/mini_set"
 #dataDir = "data/data_cup_1000"
 
+dataDir = "data/Evaluation_set/cylinder_rotation"
+#dataDir = "data/Evaluation_set/Triangle"
 outputDir="output/Evaluation_Result_"+ datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S") +"/"
 
-modelDir= "output/data_cup_1000_2023_05_09_01_17/"
-
+#modelDir = "test_models/triangle_epoch_25/"
+modelDir = "test_models/Cylinder_epoch_50/"
 
 #====================SETUP==========================
 files = sorted(glob.glob(dataDir + "/*.hdf5"),key=len)
+random.shuffle(files)
 os.makedirs(outputDir)
 
 
@@ -74,7 +76,7 @@ count=0
 
 
 
-evaluatePictures(model,files,outputDir,maxEvaluations=4,cutoffPercentage=0.99,resolution=50)
+evaluatePictures(model,files,outputDir,maxEvaluations=10,cutoffPercentage=0.95,resolution=50)
 
 
 
