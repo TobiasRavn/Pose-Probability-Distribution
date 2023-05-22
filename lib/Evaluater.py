@@ -68,8 +68,8 @@ def fullEvaluationImage(model, path, saveFolder, index=0, cutoffValue=0.90, reso
 
     #if lowIndex > 0.99: lowIndex = 0.99
     if lowIndex > 0.95: lowIndex = 0.95
-    if lowIndex > 0.9: lowIndex = 0.9
-    if lowIndex > 0.8: lowIndex = 0.8
+    elif lowIndex > 0.9: lowIndex = 0.9
+    elif lowIndex > 0.8: lowIndex = 0.8
 
     lowIndex = lowIndex*size
 
