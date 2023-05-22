@@ -46,6 +46,16 @@ def fullEvaluationImage(model, path, saveFolder, index=0, cutoffValue=0.90, reso
 
     size = len(cumulativePredictions)
     lowIndex = np.searchsorted(cumulativePredictions, 0.0001)
+
+    lowIndex = lowIndex/size
+
+    #if lowIndex > 0.99: lowIndex = 0.99
+    if lowIndex > 0.95: lowIndex = 0.95
+    if lowIndex > 0.9: lowIndex = 0.9
+    if lowIndex > 0.8: lowIndex = 0.8
+
+    lowIndex = lowIndex*size
+
     precentCutoffIndex = np.searchsorted(cumulativePredictions, 1-cutoffValue)
 
     percentile = precentCutoffIndex / size
