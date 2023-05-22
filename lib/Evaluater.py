@@ -325,16 +325,22 @@ def createPlot(plotData, indicatorIndex, startIndex=-1,endIndex=-1, groundTruthI
     cumulativeFigure = plt.figure(1, (7, 4))
     cumulativeFigure.clf()
     ax = cumulativeFigure.add_subplot(1, 1, 1)
-    ax.axhline(plotData[indicatorIndex],    color='blue', linestyle="--")
-    ax.axvline(indicatorIndex,              color='blue', linestyle="--")
+    ax.axhline(plotData[indicatorIndex],    color='red', linestyle="--", label=f"Percentage cutoff")
+    ax.axvline(indicatorIndex,              color='red', linestyle="--")
     if(groundTruthIndex>=0):
-        ax.axhline(plotData[groundTruthIndex], color='green', linestyle="--")
-        ax.axvline(groundTruthIndex, color='green', linestyle="--")
+        ax.axhline(plotData[groundTruthIndex], color='green', linestyle="..", label="Ground Truth")
+        ax.axvline(groundTruthIndex, color='green', linestyle="..")
 
+
+
+
+
+    # Slice list to remove first handle
+    plt.legend()
     plt.xlabel("Percentile of Poses")
     plt.ylabel("Cumulative probability")
     # print(percent,percentile)
-    ax.plot(plotData)
+    ax.plot(plotData, label="Cumulative Distribution")
     # print(np.sum(sortedPredictions[precentCutoffIndex:]))
     # print(lowIndex)
     ax.xaxis.set_major_formatter(mtick.PercentFormatter(size))
