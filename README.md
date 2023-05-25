@@ -8,6 +8,27 @@ Artificial images are generated in the `blenderproc` folder. BlenderProc is a mo
 
 To generate data, navigate to the `blenderproc` directory and run the appropriate scripts (Please replace "appropriate_script.py" with the actual name of your script):
 
+## Dependencies
+
+This project requires the following dependencies:
+
+BlenderProc
+NumPy
+h5py
+Please install them using pip:
+
+```shell
+Copy code
+pip install numpy h5py
+```
+
+For BlenderProc installation, please follow the instructions on the official BlenderProc GitHub page.
+
+## Further Information
+
+More information on the usage and the architecture of the project will be added as the project progresses. If you encounter any issues or have any questions, feel free to open an issue on this repository.
+
 ```shell
 cd blenderproc
 python appropriate_script.py
+
