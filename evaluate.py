@@ -21,25 +21,14 @@ from lib.Evaluater import *
 from lib.Poses import *
 #==================Settings======================
 
-#dataDir = "data/data_500_first"
-#dataDir = "data/cylinder_500"
-#dataDir = "data/data_cylinder_1000"
-#dataDir = "data/mini_set"
-#dataDir = "data/data_cup_1000"
-
-dataDir = "data/Evaluation_set/cylinder_rotation"
-#dataDir = "data/Evaluation_set/Triangle"
+dataDir = "data/Evaluation_set/cylinder_rotation" #Add link to testing data
 outputDir="output/Evaluation_Result_"+ datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S") +"/"
 
-#modelDir = "test_models/triangle_epoch_25/"
-modelDir = "test_models/Cylinder_epoch_50/"
-
+modelDir = "best_trained_weights/cylinder_weights/"
 #====================SETUP==========================
 files = sorted(glob.glob(dataDir + "/*.hdf5"),key=len)
 random.shuffle(files)
 os.makedirs(outputDir)
-
-
 
 image, ground_truth = load_image(files[0])
 img = np.array(image)

@@ -23,15 +23,15 @@ from lib.Visual import *
 #===================================================#
 dir = "data/data_triangle_1000"
 
-training = Training(dir)       #
-epochs=100                     # Commen out these when running evaluation
-training.startTraining(epochs) #
+training = Training(dir)       
+epochs=100                     
+training.startTraining(epochs) 
 
 
 
-#==================Evaluation=======================#
-#  Below is the Evaluation code .                   #
-#  Comment out the training code and change dirs    #
+#==================Testing code=====================#
+#  Below is some legacy code                        #
+#  Use evaluate.py instead                          #
 #===================================================#
 #files = glob.glob(dir + "/*.hdf5")
 #
