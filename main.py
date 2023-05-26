@@ -17,21 +17,22 @@ start_time = time.time()
 
 from lib.Visual import *
 
-
-#dir = "data/data_500_first"
-
-#dir = "data/cylinder_500"
-#dir = "data/data_cylinder_1000"
-#dir = "data/mini_set"
-#dir = "data/data_cup_1000"
+#==================Train model======================#
+#  Below is the training comands.                   #
+#  set the dir to the directory of images and start #
+#===================================================#
 dir = "data/data_triangle_1000"
-#dir = "data/data_triangle"
-#dir = "data/5905"
 
-training = Training(dir)
-epochs=150
-training.startTraining(epochs)
+training = Training(dir)       #
+epochs=100                     # Commen out these when running evaluation
+training.startTraining(epochs) #
 
+
+
+#==================Evaluation=======================#
+#  Below is the Evaluation code .                   #
+#  Comment out the training code and change dirs    #
+#===================================================#
 #files = glob.glob(dir + "/*.hdf5")
 #
 #image, ground_truth = load_image(files[0])
@@ -44,7 +45,7 @@ training.startTraining(epochs)
 #lenPose = 4
 #
 #model=ModelArchitecture(lenDiscriptors,lenPose,imgSize)
-#model.loadModel("output/data_cup_1000_2023_05_09_01_17/","weights")
+#model.loadModel("best_trained_weights/","weights")   #First define the path to the weights, then what they are called
 #random.shuffle(files)
 #
 #figures = Plot_the_figures(model)

@@ -67,13 +67,12 @@ def fullEvaluationImage(model, path, saveFolder, index=0, cutoffValue=0.90, reso
 
     lowIndex = lowIndex/size
 
-    #if lowIndex > 0.99: lowIndex = 0.99
-    if lowIndex > 0.95: lowIndex = 0.95
+    if lowIndex > 0.95: lowIndex = 0.90
     elif lowIndex > 0.9: lowIndex = 0.9
     elif lowIndex > 0.8: lowIndex = 0.8
-
     lowIndex = lowIndex*size
 
+    print(f"lowIndex {lowIndex}")
     precentCutoffIndex = np.searchsorted(cumulativePredictions, 1-cutoffValue)
 
     groundTruthIndex = np.searchsorted(sortedPredictions, ground_truth_prediction)
@@ -297,11 +296,11 @@ def calculateEvaluationLoss(ground_truth, image, model):
 
 
 
-        poses = np.zeros((4, 100, 4))
+        poses = np.zeros((4, 10000, 4))
         #poses = np.zeros((1, 50*50*50, 4))
         for i in range(1):
             #poses[i] = get_all_poses(50,50,50)
-            poses[i]=get_random_poses_plus_correct(100,ground_truth)
+            poses[i]=get_random_poses_plus_correct(10000,ground_truth)
             #poses[i][-1]=newPose
 
 
@@ -311,8 +310,8 @@ def calculateEvaluationLoss(ground_truth, image, model):
 
 
         logits_norm = model.generate_pdf(images, poses)
-        loss_value = -(tf.math.log(logits_norm[0, -1] / (
-                ((0.6 ** 2) * 3.1415 * 2) / 100)))  # index -1 because last one is the correct pose
+        loss_value = (tf.math.log(logits_norm[0, -1] / (   #
+                ((2.0 ** 2) * 3.1415 * 2) / 10000)))  # index -1 because last one is the correct pose
         #print(logits_norm[:, -1])
         #print(loss_value)
         #print(-tf.math.log(1 / (
@@ -357,7 +356,6 @@ def createPlot(plotData, indicatorIndex, startIndex=-1,endIndex=-1, groundTruthI
 
 def evaluatePictures(model, files, outputFolder,cutoffPercentage=0.9, resolution=50, maxEvaluations=-1):
     if maxEvaluations==-1: maxEvaluations=len(files)
-
     lossValues=[]
     percentiles=[]
     variances=[]
@@ -373,6 +371,7 @@ def evaluatePictures(model, files, outputFolder,cutoffPercentage=0.9, resolution
         print(f"===========================\n"
               f"\tEvaluation: {i}\n"
               f"===========================\n")
+        print(f"Image name for process {i}: {files[i]}")
         loss_value, percentileInfo, cutoffLimitBoundingBox, groundTruth, prediction, within95=fullEvaluationImage(model,files[i],outputFolder,i,cutoffPercentage,resolution)
         within95s.append(within95)
 
@@ -399,12 +398,12 @@ def evaluatePictures(model, files, outputFolder,cutoffPercentage=0.9, resolution
 
     file.write("\n")
 
-    file.write( "GroundtruthsWithin95% := "   +   np.array2string(np.average(within95s), formatter={'float_kind':lambda x: "%.4f" % x})  +"\n")
+    file.write( "GroundtruthsWithin95% := "   +   np.array2string(np.average(within95s), formatter={'float_kind':lambda x: "%.6f" % x})  +"\n")
     file.write("\n")
     file.write( "%Loss\n")
-    file.write( "averageLoss := "   +   np.array2string(np.average(lossValues), formatter={'float_kind':lambda x: "%.4f" % x})  +"\n")
-    file.write("minLoss := "        +   np.array2string(np.min(lossValues), formatter={'float_kind':lambda x: "%.4f" % x})      +"\n")
-    file.write("maxLoss := "        +   np.array2string(np.max(lossValues), formatter={'float_kind':lambda x: "%.4f" % x})      +"\n")
+    file.write( "averageLoss := "   +   np.array2string(np.average(lossValues), formatter={'float_kind':lambda x: "%.6f" % x})  +"\n")
+    file.write("minLoss := "        +   np.array2string(np.min(lossValues), formatter={'float_kind':lambda x: "%.6f" % x})      +"\n")
+    file.write("maxLoss := "        +   np.array2string(np.max(lossValues), formatter={'float_kind':lambda x: "%.6f" % x})      +"\n")
 
     file.write("\n")
 

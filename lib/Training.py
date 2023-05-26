@@ -55,7 +55,7 @@ class Training:
         self.r_min, self.r_max = 0, 360
 
         self.position_samples = 10000
-        self.batch_size = 3
+        self.batch_size = 4
 
         self.modelAchitecture = ModelArchitecture(self.lenDiscriptors, self.lenPose, self.imgSize)
 
@@ -68,7 +68,7 @@ class Training:
         self.bestLoss, self.worstLoss = self.getMinMaxLoss()
 
         self.debug_loss = Plot_loss(minLoss=self.bestLoss, maxLoss=self.worstLoss)
-        self.debug_togle = True
+        self.debug_togle = False
 
     def compute_loss(self, images, poses, training=True):
 
@@ -190,20 +190,12 @@ class Training:
         run_dir = "output/"+ object_type+ "_" + start_time.strftime("%Y_%m_%d_%H_%M")+ "/"
         os.makedirs(run_dir+"figures/")
         print("Starting training")
-        #heat_map = Heat_map(self.modelAchitecture)
         plot_figures = Plot_the_figures(self.modelAchitecture)
 
 
 
         plot_loss = Plot_loss(minLoss=self.bestLoss,maxLoss=self.worstLoss)
-        #plot_figures_static = Plot_the_figures(self.modelAchitecture)
         
-        #stored_file = self.vali_data[0] #For printing the figure with the same image
-        
-        temp_loss_print = []
-        temp_vali_print = []
-        
-        #plot_figures_static(stored_file)
         plot_figures(self.vali_data[0])
         
         for epoch in range(epochs):
@@ -212,21 +204,12 @@ class Training:
             
             
             plot_loss(self.epoch_loss,self.validation_loss_epoch)
-            #heat_map(self.vali_data[0])
             plot_figures(self.vali_data[0])
-            #plot_figures_static(stored_file)
             plot_loss.save_figure(run_dir+"figures/loss_"+ str(epoch) + ".png")
             plot_figures.save_figure(run_dir+"figures/figures_"+ str(epoch) + ".png")
-            #plot_figures_static.save_figure(run_dir+"figures/figures_static_"+ str(epoch) + ".png")
-            #heat_map.save_figure(run_dir+"figures/heat_map_"+ str(epoch) + ".png")
-            # Validation
             if self.debug_togle:
                 self.debug_loss.save_figure(run_dir+"figures/debug_loss_"+ str(epoch) + ".png")
             # Save model
             self.modelAchitecture.saveModel(run_dir)
-            if epoch % 25 == 0:
+            if epoch % 5 == 0:
                 self.modelAchitecture.saveModel(run_dir+"models/checkpoint/epoch_"+str(epoch)+"/")
-            # Save loss
-        #Saving the minimal 
-        #np.savetxt(run_dir+"loss_min.txt", np.min(self.epoch_loss))
-        #np.savetxt(run_dir+"validation_loss.txt", np.min(self.epoch_loss))

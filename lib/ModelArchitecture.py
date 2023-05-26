@@ -30,8 +30,6 @@ class ModelArchitecture:
         output = visual_embedding[:, tf.newaxis] + query_embedding
         output = tfkl.ReLU()(output)
         output = tfkl.Dense(256, 'relu')(output)
-        output = tfkl.Dense(256, 'relu')(output)
-        output = tfkl.Dense(256, 'relu')(output)
         output = tfkl.Dense(1)(output)
         self.mlp_model = tf.keras.models.Model(
             inputs=[input_visual, input_query],
